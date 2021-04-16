@@ -1,0 +1,60 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\title{Project Proposal: GPU accelerated ray tracing}
+\author{William Zhang}
+\date{\today}
+
+\begin{document}
+\maketitle
+\section{Objective}
+By the end of this project, I should have a working ray tracer capable of generating scenes in real time.
+
+\section{Requirements}
+\begin{enumerate}
+    \item GPU: I own one in my own machine which will allow me to see whether my product is working
+\end{enumerate}
+
+\section{Summary}
+Ray tracing involves casting rays corresponding to each pixel on the screen into the
+world and coloring the pixel dependent on the objects that it intersects. As each pixel
+is independent of one another, ray tracing is highly parallelizable. However, doing so
+on the GPU does pose problems due to secondary rays that are constructed during reflection
+and refraction. In this project, I will learn how to deal with these challenges and create
+a GPU-accelerated renderer.
+
+\section{Timeline}
+Below is my proposed timeline for this project. Italicized bullet points indicate topics pertaining
+to my graphics final project
+\begin{enumerate}
+    \item \textbf{Wednesday, April 21:} Implement the ray tracer with support of
+          \begin{enumerate}
+              \item Displaying images on the GPU to the monitor
+              \item Triangle mesh intersection
+              \item Phong illumination model
+          \end{enumerate}
+    \item \textbf{Sunday, April 24:} Improve on the ray tracer
+          \begin{enumerate}
+              \item Secondary ray calculation
+              \item Bounding volume heirarchy tree for pruning intersection search space
+              \item \textit{Texture mapping of surfaces}
+          \end{enumerate}
+    \item \textbf{Wednesday, April 28:} Implement a scene
+          \begin{enumerate}
+              \item \textit{Procedural generation of a world}
+              \item \textit{World, camera, and local coordinate spaces}
+              \item \textit{GUI and user input and output}
+          \end{enumerate}
+    \item \textbf{Monday, May 1:} Real-time optimizations and presentation preparation
+\end{enumerate}
+
+\section{Measurements}
+\begin{enumerate}
+    \item The primary measurement I will be taking is the frame rate of the program. Should my
+          program reach a framerate greater than or equal to 60, I would consider the program to be functional
+          in real time. I anticipate that simple GPU acceleration would not suffice to reach this mark,
+          and substantial optimizations involving pruning objects from intersection is needed.
+\end{enumerate}
+
+\end{document}
