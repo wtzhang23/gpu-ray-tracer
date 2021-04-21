@@ -1,10 +1,15 @@
+#ifndef LINEAR_H
+#define LINEAR_H
+
 #ifdef __CUDACC__
-#include <math.h>
-#include <cassert>
 #define CUDA_HOSTDEV __host__ __device__
 #else
 #define CUDA_HOSTDEV
 #endif
+
+#include <cmath>
+#include <cassert>
+#include <iostream>
 
 namespace linear {
 constexpr double THRESHOLD = 1E-6;
@@ -18,7 +23,7 @@ public:
     Vec3(T x, T y, T z): coords{x, y, z} {}
 
     CUDA_HOSTDEV
-    Vec3(T coords[3]): coords(coords){}
+    Vec3(T coords[3]): Vec3(coords[0], coords[1], coords[2]){}
 
     CUDA_HOSTDEV
     static Vec3 zero() {
@@ -26,8 +31,24 @@ public:
     }
 
     CUDA_HOSTDEV
+    static T dot(const Vec3<T>& first, const Vec3<T>& second) {
+        return first[0] * second[0] + first[1] * second[1] + first[2] * second[2];
+    }
+
+    CUDA_HOSTDEV
+    static Vec3<T> cross(const Vec3<T>& first, const Vec3<T>& second) {
+        float x = first[1] * second[2] - first[2] * second[1];
+        float y = first[2] * second[0] - first[0] * second[2];
+        float z = first[0] * second[1] - first[1] * second[0];
+        Vec3 output = Vec3(x, y, z);
+        assert(abs(Vec3<T>::dot(first, output)) <= THRESHOLD);
+        assert(abs(Vec3<T>::dot(second, output)) <= THRESHOLD);
+        return output;
+    }
+
+    CUDA_HOSTDEV
     T squared_norm() const {
-        return Vec3::dot(*this, *this);
+        return Vec3<T>::dot(*this, *this);
     }
 
     CUDA_HOSTDEV
@@ -36,25 +57,27 @@ public:
     }
 
     CUDA_HOSTDEV
-    T normalize() {
-        T len = len();
+    Vec3<T> normalized() const {
+        T len = this->len();
         if (len > THRESHOLD) {
-            coords[0] /= len;
-            coords[1] /= len;
-            coords[2] /= len;
+            return scaled(1 / len);
+        } else {
+            return Vec3<T>::zero();
         }
     }
 
     CUDA_HOSTDEV
-    T negate() {
-        scale(-1);
+    Vec3<T> negated() const {
+        return scaled(-1);
     }
 
     CUDA_HOSTDEV
-    T scale(T coef) {
-        coords[0] *= coef;
-        coords[1] *= coef;
-        coords[2] *= coef;
+    Vec3<T> scaled(T coef) const {
+        T new_coords[3];
+        new_coords[0] = coords[0] * coef;
+        new_coords[1] = coords[1] * coef;
+        new_coords[2] = coords[2] * coef;
+        return Vec3<T>(new_coords);
     }
 
     CUDA_HOSTDEV
@@ -62,29 +85,19 @@ public:
         return coords[idx];
     }
 
-    CUDA_HOSTDEV
-    friend T dot(const Vec3<T>& first, const Vec3<T>& second) {
-        return first.x * second.x + first.y * second.y + first.z * second.z;
-    }
-
-    CUDA_HOSTDEV
-    friend Vec3<T> cross(const Vec3<T>& first, const Vec3<T>& second) {
-        float x = first.y * second.z - first.z * second.y;
-        float y = first.z * second.x - first.x * second.z;
-        float z = first.x * second.y - first.y * second.x;
-        Vec3 output = Vec3(x, y, z);
-        assert(abs(Vec3<T>::dot(first, output)) <= THRESHOLD);
-        assert(abs(Vec3<T>::dot(second, output)) <= THRESHOLD);
-        return output;
+    friend std::ostream& operator<<(std::ostream& os, const Vec3<T>& vec) {
+        os << "[" << vec[0] << ", " << vec[1] << ", " << vec[2] << "]"; 
+        return os;
     }
 };
+
 
 template <typename T>
 class Mat3 {
 private:
     T inner[3][3];
     CUDA_HOSTDEV
-    T compute_cofactor(int row1, int row2, int col1, int col2) {
+    T compute_cofactor(int row1, int row2, int col1, int col2) const {
         return inner[row1][col1] * inner[row2][col2] - inner[row1][col2] * inner[row2][col1];
     }
 
@@ -104,7 +117,13 @@ private:
     }
 public:
     CUDA_HOSTDEV
-    Mat3(T inner[3][3]): inner(inner){}
+    Mat3(T inner[3][3]) {
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                this->inner[i][j] = inner[i][j];
+            }
+        }
+    }
     
     CUDA_HOSTDEV
     static Mat3<T> identity() {
@@ -124,7 +143,7 @@ public:
     CUDA_HOSTDEV
     T determinant() const {
         T minor1 = inner[0][0] * compute_cofactor(1, 2, 1, 2);
-        T minor2 = inner[0][1] * compute_cofactor(1, 2, 0, 3);
+        T minor2 = inner[0][1] * compute_cofactor(1, 2, 0, 2);
         T minor3 = inner[0][2] * compute_cofactor(1, 2, 0, 1);
         return minor1 - minor2 + minor3;
     }
@@ -141,13 +160,13 @@ public:
     }
 
     CUDA_HOSTDEV
-    friend Mat3<T> multiply(Mat3<T>& a, Mat3<T>& b) {
+    static Mat3<T> multiply(const Mat3<T>& a, const Mat3<T>& b) {
         float inner[3][3];
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 float sum = 0;
                 for (int k = 0; k < 3; k++) {
-                    sum += a[i][k] * b[k][j];
+                    sum += a.inner[i][k] * b.inner[k][j];
                 }
                 inner[i][j] = sum;
             }
@@ -156,28 +175,47 @@ public:
     } 
 
     CUDA_HOSTDEV
-    Vec3<T> multiplyVec3(Vec3<T>& to_multiply) {
-        T coords[3];
+    static Vec3<T> multiplyVec3(const Mat3<T>& arr, const Vec3<T>& to_multiply) {
+        T new_coords[3];
         for (int i = 0; i < 3; i++) {
             T sum = 0;
             for (int j = 0; j < 3; j++) {
-                sum += inner[i][j] * to_multiply[j];
+                sum += arr.inner[i][j] * to_multiply[j];
             }
-            coords[i] = sum;
+            new_coords[i] = sum;
         }
-        return Vec3<T>(coords);
+        return Vec3<T>(new_coords);
     }
 
     CUDA_HOSTDEV
     Mat3<T> inverse() const {
-        Mat3<T> adj = adjugate();
         T det = determinant();
-        for (int i = 0; i < 3; i++) {
+        if (det > THRESHOLD) {
+            Mat3<T> adj = adjugate();
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 3; j++) {
+                    adj.inner[i][j] /= det;
+                }
+            }
+            return adj;
+        } else {
+            T new_inner[3][3] = {{NAN, NAN, NAN}, {NAN, NAN, NAN}, {NAN, NAN, NAN}};
+            return Mat3<T>(new_inner);
+        }
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const Mat3<T>& vec) {
+        os << "[" << vec.inner[0][0] << " " << vec.inner[0][1] << " " << vec.inner[0][2];
+        for (int i = 1; i < 3; i++) {
+            os << ";";
             for (int j = 0; j < 3; j++) {
-                adj.inner[i][j] /= det;
+                os << " " << vec.inner[i][j];
             }
         }
-        return adj;
+        os << "]";
+        return os;
     }
 };
 }
+
+#endif
