@@ -11,7 +11,10 @@ private:
 public:
     __host__ __device__
     Vec3(T x, T y, T z): coords{x, y, z} {}
-    
+
+    __host__ __device__
+    Vec3(T coords[3]): coords(coords){}
+
     __host__ __device__
     static Vec3 zero() {
         return Vec3(0, 0, 0);
@@ -147,6 +150,19 @@ public:
             }
         }
     } 
+
+    __host__ __device__
+    Vec3<T> multiplyVec3(Vec3<T>& to_multiply) {
+        T coords[3];
+        for (int i = 0; i < 3; i++) {
+            T sum = 0;
+            for (int j = 0; j < 3; j++) {
+                sum += inner[i][j] * to_multiply[j];
+            }
+            coords[i] = sum;
+        }
+        return Vec3<T>(coords);
+    }
 
     __host__ __device__
     Mat3<T> inverse() const {
