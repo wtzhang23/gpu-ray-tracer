@@ -1,8 +1,8 @@
 # Fdb version 3
-["pdflatex"] 1618460026 "/home/wtzhang23/Documents/cs/cs378h_concurrency/final/proposal.tex" "/home/wtzhang23/Documents/cs/cs378h_concurrency/final/proposal.pdf" "proposal" 1618460026
+["pdflatex"] 1618540222 "/home/wtzhang23/Documents/cs/cs378h_concurrency/final/proposal.tex" "/home/wtzhang23/Documents/cs/cs378h_concurrency/final/proposal.pdf" "proposal" 1618540222
   "/etc/texmf/web2c/texmf.cnf" 1601674429 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/home/wtzhang23/Documents/cs/cs378h_concurrency/final/proposal.aux" 1618460026 486 55ad5d0dc12d43f8bc596c6dcdb49412 ""
-  "/home/wtzhang23/Documents/cs/cs378h_concurrency/final/proposal.tex" 1618460025 2656 738e9ec31c3673130285c4343bfe7664 ""
+  "/home/wtzhang23/Documents/cs/cs378h_concurrency/final/proposal.aux" 1618540222 486 55ad5d0dc12d43f8bc596c6dcdb49412 ""
+  "/home/wtzhang23/Documents/cs/cs378h_concurrency/final/proposal.tex" 1618540222 2688 3dd949db9b5344d5051f00b1eeee0eb4 ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/public/cm/cmbx10.tfm" 1136768653 1328 c834bbb027764024c09d3d2bf908b5f0 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/public/cm/cmbx12.tfm" 1136768653 1324 c910af8c371558dc20f2d7822f66fe64 ""
@@ -46,11 +46,11 @@
   "/usr/share/texmf/web2c/texmf.cnf" 1581979058 38841 ce3692aa899bb693b90b87eaa5d4d84e ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1601674563 4770781 1ed1abab22da9c3e2cc82e4db562318b ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1601674589 8259065 ae4b636912dc6118a59e61f7fe3ffc95 ""
-  "proposal.aux" 1618460026 486 55ad5d0dc12d43f8bc596c6dcdb49412 "pdflatex"
-  "proposal.tex" 1618460025 2656 738e9ec31c3673130285c4343bfe7664 ""
+  "proposal.aux" 1618540222 486 55ad5d0dc12d43f8bc596c6dcdb49412 "pdflatex"
+  "proposal.tex" 1618540222 2688 3dd949db9b5344d5051f00b1eeee0eb4 ""
   (generated)
-  "/home/wtzhang23/Documents/cs/cs378h_concurrency/final/proposal.pdf"
-  "proposal.aux"
-  "proposal.pdf"
-  "proposal.log"
   "/home/wtzhang23/Documents/cs/cs378h_concurrency/final/proposal.log"
+  "/home/wtzhang23/Documents/cs/cs378h_concurrency/final/proposal.pdf"
+  "proposal.pdf"
+  "proposal.aux"
+  "proposal.log"

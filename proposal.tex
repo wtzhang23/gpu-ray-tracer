@@ -3,17 +3,17 @@
 \usepackage{graphicx}
 \usepackage{subcaption}
 \title{Project Proposal: GPU accelerated ray tracing}
-\author{William Zhang}
+\author{William Zhang and Sasha Makarovskiy}
 \date{\today}
 
 \begin{document}
 \maketitle
 \section{Objective}
-By the end of this project, I should have a working ray tracer capable of generating scenes in real time.
+By the end of this project, we should have a working ray tracer capable of generating scenes in real time.
 
 \section{Requirements}
 \begin{enumerate}
-    \item GPU: I own one in my own machine which will allow me to see whether my product is working
+    \item GPU: We own one in my own machine which will allow me to see whether our product is working
 \end{enumerate}
 
 \section{Summary}
@@ -21,12 +21,12 @@ Ray tracing involves casting rays corresponding to each pixel on the screen into
 world and coloring the pixel dependent on the objects that it intersects. As each pixel
 is independent of one another, ray tracing is highly parallelizable. However, doing so
 on the GPU does pose problems due to secondary rays that are constructed during reflection
-and refraction. In this project, I will learn how to deal with these challenges and create
+and refraction. In this project, we will learn how to deal with these challenges and create
 a GPU-accelerated renderer.
 
 \section{Timeline}
-Below is my proposed timeline for this project. Italicized bullet points indicate topics pertaining
-to my graphics final project
+Below is our proposed timeline for this project. Italicized bullet points indicate topics pertaining
+to our graphics final project
 \begin{enumerate}
     \item \textbf{Wednesday, April 21:} Implement the ray tracer with support of
           \begin{enumerate}
@@ -51,9 +51,9 @@ to my graphics final project
 
 \section{Measurements}
 \begin{enumerate}
-    \item The primary measurement I will be taking is the frame rate of the program. Should my
-          program reach a framerate greater than or equal to 60, I would consider the program to be functional
-          in real time. I anticipate that simple GPU acceleration would not suffice to reach this mark,
+    \item The primary measurement we will be taking is the frame rate of the program. Should our
+          program reach a framerate greater than or equal to 60, we would consider the program to be functional
+          in real time. We anticipate that simple GPU acceleration would not suffice to reach this mark,
           and substantial optimizations involving pruning objects from intersection is needed.
 \end{enumerate}
 

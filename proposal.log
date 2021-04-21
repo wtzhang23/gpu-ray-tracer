@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2020.10.2)  14 APR 2021 23:13
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2020.10.2)  15 APR 2021 21:30
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -169,13 +169,13 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 Here is how much of TeX's memory you used:
  2838 strings out of 481239
  45754 string characters out of 5920377
- 286146 words of memory out of 5000000
+ 286168 words of memory out of 5000000
  18121 multiletter control sequences out of 15000+600000
  536932 words of font info for 39 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 48i,6n,46p,366b,190s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 48i,6n,46p,366b,246s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb>
-Output written on /home/wtzhang23/Documents/cs/cs378h_concurrency/final/proposal.pdf (2 pages, 82394 bytes).
+Output written on /home/wtzhang23/Documents/cs/cs378h_concurrency/final/proposal.pdf (2 pages, 84578 bytes).
 PDF statistics:
  35 PDF objects out of 1000 (max. 8388607)
  24 compressed objects within 1 object stream
