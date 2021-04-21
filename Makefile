@@ -2,10 +2,10 @@ EXEC := ray_tracer
 SRC ?= src
 BIN := bin
 INCLUDE := include
-CC := gcc
+CC := nvcc
 CFLAGS := -I ${INCLUDE} -O3 -g -c
 CUCC := nvcc
-CUFLAGS := -g -c
+CUFLAGS := -g -c -I ${INCLUDE} -O3
 LD := nvcc
 LDFLAGS := -O3
 
