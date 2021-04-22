@@ -272,6 +272,11 @@ public:
     }
 
     CUDA_HOSTDEV
+    T operator()(int row, int col) const {
+        return inner[row][col];
+    }
+
+    CUDA_HOSTDEV
     Mat3<T>& operator*=(const Mat3<T>& other) {
         float inner[3][3];
         for (int i = 0; i < 3; i++) {

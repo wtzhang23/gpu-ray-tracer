@@ -10,6 +10,7 @@
 #include <cmath>
 #include <cassert>
 #include <iostream>
+#include <cmath>
 #include "linear.h"
 
 extern const double THRESHOLD;
@@ -19,12 +20,16 @@ template <typename T>
 class Quat {
 private:
     linear::Vec4<T> inner;
+
+    T imaginary_len() const {
+        return sqrt(i() * i() + j() * j() + k() * k());
+    }
 public:
     CUDA_HOSTDEV
     Quat(linear::Vec4<T> inner): inner(inner) {}
 
     CUDA_HOSTDEV
-    Quat(T r, T i, T j, T k): inner({r, i, j, k}) {}
+    Quat(T i, T j, T k, T r): inner({i, j, k, r}) {}
 
     CUDA_HOSTDEV
     Quat(linear::Vec3<T> inner): Quat(0, inner[0], inner[1], inner[2]) {}
@@ -33,12 +38,47 @@ public:
     Quat(linear::Vec3<T> axis, T theta) {
         T half_cos_theta = cos(theta / 2);
         T half_sin_theta = sin(theta / 2);
-        T inner[4] = {half_cos_theta, axis[0] * half_sin_theta, axis[1] * half_sin_theta, axis[2] * half_sin_theta};
+        T inner[4] = {axis[0] * half_sin_theta, axis[1] * half_sin_theta, axis[2] * half_sin_theta, half_cos_theta};
         this->inner = linear::Vec4<T>(inner);
     }
 
+    CUDA_HOSTDEV
+    Quat(linear::Mat3<T> rot_mat) {
+        T t;
+        if (rot_mat(2, 2) < 0) {
+            if (rot_mat(0, 0) > rot_mat(1, 1)) {
+                t = 1 + rot_mat(0, 0) - rot_mat(1, 1) - rot_mat(2, 2);
+                inner = linear::Vec4<T>({t, 
+                            rot_mat(1, 0) + rot_mat(0, 1),
+                            rot_mat(0, 2) + rot_mat(2, 0),
+                            rot_mat(2, 1) - rot_mat(1, 2)});
+            } else {
+                t = 1 - rot_mat(0, 0) + rot_mat(1, 1) - rot_mat(2, 2);
+                inner = linear::Vec4<T>({rot_mat(1, 0) + rot_mat(0, 1),
+                            t,
+                            rot_mat(2, 1) + rot_mat(1, 2),
+                            rot_mat(0, 2) - rot_mat(2, 0)});
+            }
+        } else {
+            if (rot_mat(0, 0) < -rot_mat(1, 1)) {
+                t = 1 - rot_mat(0, 0) - rot_mat(1, 1) + rot_mat(2, 2);
+                inner = linear::Vec4<T>({rot_mat(0, 2) + rot_mat(2, 0),
+                            rot_mat(2, 1) + rot_mat(1, 2),
+                            t,
+                            rot_mat(1, 0) - rot_mat(0, 1)});
+            } else {
+                t = 1 + rot_mat(0, 0) + rot_mat(1, 1) + rot_mat(2, 2);
+                inner = linear::Vec4<T>({rot_mat(2, 1) - rot_mat(1, 2),
+                            rot_mat(0, 2) - rot_mat(2, 0),
+                            rot_mat(1, 0) - rot_mat(0, 1),
+                            t});
+            }
+        }
+        inner = (0.5 / sqrt(t) * inner).normalized();
+    }
+
     static Quat<T> identity() {
-        return Quat<T>(1, 0, 0, 0);
+        return Quat<T>(0, 0, 0, 1);
     }
 
     linear::Vec4<T> to_Vec4() const {
@@ -54,27 +94,41 @@ public:
     }
 
     T r() const {
-        return inner[0];
-    }
-
-    T i() const {
-        return inner[1];
-    }
-
-    T j() const {
-        return inner[2];
-    }
-
-    T k() const {
         return inner[3];
     }
 
-    T len() const {
-        return inner.len();
+    T i() const {
+        return inner[0];
+    }
+
+    T j() const {
+        return inner[1];
+    }
+
+    T k() const {
+        return inner[2];
+    }
+
+    linear::Vec3<T> axis() const {
+        T im_len = imaginary_len();
+        if (im_len < THRESHOLD) {
+            return linear::Vec3<T>({0, 0, 0});
+        } else {
+            return linear::Vec3<T>({i() / im_len, j() / im_len, k() / im_len}).normalized();
+        }
+    }
+
+    T angle() const {
+        T im_len = imaginary_len();
+        if (im_len < THRESHOLD || r() < THRESHOLD) {
+            return 0;
+        } else {
+            return 2 * atan2(im_len, r());
+        }
     }
 
     Quat<T> conjugate() const {
-        return Quat<T>(r(), -i(), -j(), -k());
+        return Quat<T>(-i(), -j(), -k(), r());
     }
 
     Quat<T> inverse() const {
@@ -85,20 +139,19 @@ public:
         }
 
         T inv_sq_norm = 1 / sq_norm;
-        return Quat<T>(r() * inv_sq_norm, i() * -inv_sq_norm, j() * -inv_sq_norm, k() * -inv_sq_norm);
+        return Quat<T>(i() * -inv_sq_norm, j() * -inv_sq_norm, k() * -inv_sq_norm, r() * inv_sq_norm);
     }
 
     Quat<T> normalized() const {
-        T length = len();
-        return Quat<T>(r() / length, i() / length, j() / length, k() / length);
+        return Quat<T>(inner.normalized());
     }
 
     CUDA_HOSTDEV
     Quat<T>& operator*=(const Quat<T>& other) {
-        inner = linear::Vec4<T>({r() * other.r() - i() * other.i() - j() * other.j() - k() * other.k(),
-                        i() * other.r() + r() * other.i() + j() * other.k() - k() * other.j(),
+        inner = linear::Vec4<T>({i() * other.r() + r() * other.i() + j() * other.k() - k() * other.j(),
                         j() * other.r() + r() * other.j() + k() * other.i() - i() * other.k(),
-                        k() * other.r() + r() * other.k() + i() * other.j() - j() * other.i()});
+                        k() * other.r() + r() * other.k() + i() * other.j() - j() * other.i(),
+                        r() * other.r() - i() * other.i() - j() * other.j() - k() * other.k()});
         return *this;
     }
 
@@ -118,7 +171,7 @@ public:
 
     CUDA_HOSTDEV
     linear::Mat3<T> to_Mat3() const {
-        T length = len();
+        T length = inner.len();
         T ni = i() / length;
         T nj = j() / length;
         T nk = k() / length;
@@ -134,7 +187,7 @@ public:
     }
 
     friend std::ostream& operator<<(std::ostream& os, const Quat<T>& q) {
-        os << "[r: " << q.r() << ", i: " << q.i() << ", j: " << q.j() << ", k: " << q.k() << "]"; 
+        os << "[i: " << q.i() << ", j: " << q.j() << ", k: " << q.k() <<  ", r: " << q.r() << "]"; 
         return os;
     }
 };

@@ -17,8 +17,6 @@ const int HEIGHT = 480;
 const double THRESHOLD = 1E-6;
 
 int main(int argc, const char** argv) {
-    geometry::Quat<float> a{1.0,2.0,3.0,4.0};
-    geometry::Quat<float> b{5.0, 6.0, 7.0, 8.0};
     SDL_Init(SDL_INIT_VIDEO);
     std::shared_ptr<std::atomic_bool> running = std::shared_ptr<std::atomic_bool>(new std::atomic_bool(true));
     
