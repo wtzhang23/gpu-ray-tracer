@@ -4,7 +4,8 @@
 #include "scene.h"
 
 namespace raytracer {
-    void update_scene(scene::Scene& scene);
+    template <typename T>
+    void update_scene(scene::Scene<T>& scene);
 }
 
 #endif

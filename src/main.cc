@@ -6,6 +6,7 @@
 #include <string>
 #include <cstdio>
 #include <atomic>
+#include <cmath>
 #include "raytracer.h"
 #include "linear.h"
 #include "canvas.h"
@@ -37,7 +38,8 @@ int main(int argc, const char** argv) {
                                                             WIDTH, HEIGHT, SDL_WINDOW_RESIZABLE);
     SDL_Surface* screen = SDL_GetWindowSurface(window);
     canvas::Canvas canvas{WIDTH, HEIGHT};
-    scene::Scene scene{canvas};
+    scene::Camera<float> camera{M_PI / 4, canvas};
+    scene::Scene<float> scene{canvas, camera};
     int rmask = canvas::Color::rmask();
     int gmask = canvas::Color::gmask();
     int bmask = canvas::Color::bmask();

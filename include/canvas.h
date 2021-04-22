@@ -160,12 +160,12 @@ public:
     }
 
     CUDA_HOSTDEV
-    int get_height() {
+    int get_height() const {
         return height;
     }
 
     CUDA_HOSTDEV
-    int get_width() {
+    int get_width() const {
         return width;
     }
 };

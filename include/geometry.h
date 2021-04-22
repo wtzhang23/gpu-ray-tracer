@@ -191,6 +191,27 @@ public:
         return os;
     }
 };
+
+template <typename T>
+class Ray {
+private:
+    linear::Vec3<T> o;
+    linear::Vec3<T> d;
+public:
+    Ray(linear::Vec3<T> orientation, linear::Vec3<T> direction): o(orientation), d(direction.normalized()) {}
+
+    Ray origin() {
+        return o;
+    }
+
+    Ray direction() {
+        return d;
+    }
+
+    linear::Vec3<T> at(T dt) {
+        return o + d * dt;
+    }
+};
 }
 
 #endif
