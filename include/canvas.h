@@ -10,14 +10,12 @@
 #include <cstdint>
 #include <SDL2/SDL.h>
 #include <iostream>
+#include "linear.h"
 
 namespace canvas {
 class Color {
 private:
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
-    uint8_t a;
+    linear::Vec4<std::uint8_t> inner;
     const static int R_ORDER = 3;
     const static int G_ORDER = 2;
     const static int B_ORDER = 1;
@@ -44,15 +42,15 @@ private:
     }
 public:
     CUDA_HOSTDEV
-    Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a): r(r), g(g), b(b), a(a) {}
+    Color(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a): inner({r, g, b, a}) {}
     CUDA_HOSTDEV
-    Color(uint8_t r, uint8_t g, uint8_t b): Color(r, g, b, UINT8_MAX) {}
+    Color(std::uint8_t r, std::uint8_t g, std::uint8_t b): Color(r, g, b, UINT8_MAX) {}
     CUDA_HOSTDEV
-    Color(double r, double g, double b, double a): Color((uint8_t) ((double) UINT8_MAX * r), (uint8_t) ((double) UINT8_MAX * g), 
-                                                    (uint8_t) ((double) UINT8_MAX * b), (uint8_t) ((double) UINT8_MAX * a)) {}
+    Color(double r, double g, double b, double a): Color((std::uint8_t) ((double) UINT8_MAX * r), (std::uint8_t) ((double) UINT8_MAX * g), 
+                                                    (std::uint8_t) ((double) UINT8_MAX * b), (std::uint8_t) ((double) UINT8_MAX * a)) {}
     CUDA_HOSTDEV
-    Color(float r, float g, float b, float a): Color((uint8_t) ((float) UINT8_MAX * r), (uint8_t) ((float) UINT8_MAX * g), 
-                                                    (uint8_t) ((float) UINT8_MAX * b), (uint8_t) ((float) UINT8_MAX * a)) {}
+    Color(float r, float g, float b, float a): Color((std::uint8_t) ((float) UINT8_MAX * r), (std::uint8_t) ((float) UINT8_MAX * g), 
+                                                    (std::uint8_t) ((float) UINT8_MAX * b), (std::uint8_t) ((float) UINT8_MAX * a)) {}
     CUDA_HOSTDEV
     Color(double r, double g, double b): Color(r, g, b, 1.0){}
     CUDA_HOSTDEV
@@ -60,15 +58,15 @@ public:
 
     CUDA_HOSTDEV
     int to_encoding() const {
-        return (((int) r) << rshift()) + (((int) g) << gshift()) + (((int) b) << bshift()) + (((int) a) << ashift());
+        return (((int) inner[0]) << rshift()) + (((int) inner[1]) << gshift()) + (((int) inner[2]) << bshift()) + (((int) inner[3]) << ashift());
     }
 
     CUDA_HOSTDEV
     static Color from_encoding(int encoding) {
-        uint8_t r = (uint8_t) (((encoding & Color::rmask()) >> Color::rshift()) & UINT8_MAX);
-        uint8_t g = (uint8_t) (((encoding & Color::gmask()) >> Color::gshift()) & UINT8_MAX);
-        uint8_t b = (uint8_t) (((encoding & Color::bmask()) >> Color::bshift()) & UINT8_MAX);
-        uint8_t a = (uint8_t) (((encoding & Color::amask()) >> Color::ashift()) & UINT8_MAX);
+        std::uint8_t r = (std::uint8_t) (((encoding & Color::rmask()) >> Color::rshift()) & UINT8_MAX);
+        std::uint8_t g = (std::uint8_t) (((encoding & Color::gmask()) >> Color::gshift()) & UINT8_MAX);
+        std::uint8_t b = (std::uint8_t) (((encoding & Color::bmask()) >> Color::bshift()) & UINT8_MAX);
+        std::uint8_t a = (std::uint8_t) (((encoding & Color::amask()) >> Color::ashift()) & UINT8_MAX);
         return Color(r, g, b, a);
     }
 
@@ -92,8 +90,28 @@ public:
         return ((int) UINT8_MAX) << Color::ashift();
     }
 
+    CUDA_HOSTDEV
+    std::uint8_t r() const {
+        return inner[0];
+    }
+
+    CUDA_HOSTDEV
+    std::uint8_t g() const {
+        return inner[1];
+    }
+
+    CUDA_HOSTDEV
+    std::uint8_t b() const {
+        return inner[2];
+    }
+
+    CUDA_HOSTDEV
+    std::uint8_t a() const {
+        return inner[3];
+    }
+
     friend std::ostream& operator<<(std::ostream& os, const Color& col) {
-        os << "[r: " << (int) col.r << ", g: " << (int) col.g << ", b: " << (int) col.b << ", a: " << (int) col.a << "]"; 
+        os << "[r: " << (int) col.r() << ", g: " << (int) col.g() << ", b: " << (int) col.b() << ", a: " << (int) col.a() << "]"; 
         return os;
     }
 };

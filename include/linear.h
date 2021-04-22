@@ -10,24 +10,57 @@
 #include <cmath>
 #include <cassert>
 #include <iostream>
+#include <initializer_list>
+
+extern const double THRESHOLD;
 
 namespace linear {
-constexpr double THRESHOLD = 1E-6;
+template <typename T, int Dim>
+class Vec;
 
-template <typename T>
-class Vec3 {
+template <typename T, int Dim>
+CUDA_HOSTDEV
+T dot(const Vec<T, Dim>& first, const Vec<T, Dim>& second);
+
+template <typename T, int Dim>
+class Vec {
 private:
-    T coords[3];
+    T coords[Dim];
 public:
     CUDA_HOSTDEV
-    Vec3(T x, T y, T z): coords{x, y, z} {}
+    Vec() {
+        for (int i = 0; i < Dim; i++) {
+            coords[i] = 0;
+        }
+    }
 
     CUDA_HOSTDEV
-    Vec3(T coords[3]): Vec3(coords[0], coords[1], coords[2]){}
+    Vec(T coords[Dim]) {
+        for (int i = 0; i < Dim; i++) {
+            this->coords[i] = coords[i];
+        }
+    }
 
     CUDA_HOSTDEV
-    static Vec3 zero() {
-        return Vec3(0, 0, 0);
+    Vec(std::initializer_list<T> dims) {
+        int idx = 0;
+        for (T c : dims) {
+            if (idx >= Dim) {
+                break;
+            }
+            coords[idx] = c;
+            idx++;
+        }
+    }
+
+    CUDA_HOSTDEV
+    static Vec<T, Dim> zero() {
+        return Vec<T, Dim>();
+    }
+
+    CUDA_HOSTDEV
+    T& operator[](int idx) {
+        return coords[idx];
     }
 
     CUDA_HOSTDEV
@@ -36,99 +69,83 @@ public:
     }
 
     CUDA_HOSTDEV
-    static T dot(const Vec3<T>& first, const Vec3<T>& second) {
-        return first[0] * second[0] + first[1] * second[1] + first[2] * second[2];
-    }
-
-    CUDA_HOSTDEV
-    static Vec3<T> cross(const Vec3<T>& first, const Vec3<T>& second) {
-        float x = first[1] * second[2] - first[2] * second[1];
-        float y = first[2] * second[0] - first[0] * second[2];
-        float z = first[0] * second[1] - first[1] * second[0];
-        Vec3 output = Vec3(x, y, z);
-        assert(abs(Vec3<T>::dot(first, output)) <= THRESHOLD);
-        assert(abs(Vec3<T>::dot(second, output)) <= THRESHOLD);
-        return output;
-    }
-
-    CUDA_HOSTDEV
-    Vec3<T>& operator+=(const Vec3<T>& other) {
-        coords[0] += other[0];
-        coords[1] += other[1];
-        coords[2] += other[2];
+    Vec<T, Dim>& operator+=(const Vec<T, Dim>& other) {
+        for (int i = 0; i < Dim; i++) {
+            coords[i] += other[i];
+        }
         return *this;
     }
 
     CUDA_HOSTDEV
-    Vec3<T>& operator-=(const Vec3<T>& other) {
-        coords[0] -= other[0];
-        coords[1] -= other[1];
-        coords[2] -= other[2];
+    Vec<T, Dim>& operator-=(const Vec<T, Dim>& other) {
+        for (int i = 0; i < Dim; i++) {
+            coords[i] -= other[i];
+        }
         return *this;
     }
 
     CUDA_HOSTDEV
-    Vec3<T>& operator*=(const Vec3<T>& other) {
-        coords[0] *= other[0];
-        coords[1] *= other[1];
-        coords[2] *= other[2];
+    Vec<T, Dim>& operator*=(const Vec<T, Dim>& other) {
+        for (int i = 0; i < Dim; i++) {
+            coords[i] *= other[i];
+        }
         return *this;
     }
 
     CUDA_HOSTDEV
-    Vec3<T>& operator/=(const Vec3<T>& other) {
-        coords[0] /= other[0];
-        coords[1] /= other[1];
-        coords[2] /= other[2];
+    Vec<T, Dim>& operator/=(const Vec<T, Dim>& other) {
+        for (int i = 0; i < Dim; i++) {
+            coords[i] /= other[i];
+        }
         return *this;
     }
 
     CUDA_HOSTDEV
-    Vec3<T>& operator*=(T coef) const {
-        coords[0] *= coef;
-        coords[1] *= coef;
-        coords[2] *= coef;
+    Vec<T, Dim>& operator*=(T coef) {
+        for (int i = 0; i < Dim; i++) {
+            coords[i] *= coef;
+        }
         return *this;
     }
 
     CUDA_HOSTDEV
-    friend Vec3<T> operator+(const Vec3<T>& first, const Vec3<T>& second) {
-        Vec3<T> first_cpy = first;
+    friend Vec<T, Dim> operator+(const Vec<T, Dim>& first, const Vec<T, Dim>& second) {
+        Vec<T, Dim> first_cpy = first;
         first_cpy += second;
         return first_cpy;
     }
 
     CUDA_HOSTDEV
-    friend Vec3<T> operator-(const Vec3<T>& first, const Vec3<T>& second) {
-        Vec3<T> first_cpy = first;
+    friend Vec<T, Dim> operator-(const Vec<T, Dim>& first, const Vec<T, Dim>& second) {
+        Vec<T, Dim> first_cpy = first;
         first_cpy -= second;
         return first_cpy;
     }
 
     CUDA_HOSTDEV
-    friend Vec3<T> operator*(const Vec3<T>& first, const Vec3<T>& second) {
-        Vec3<T> first_cpy = first;
+    friend Vec<T, Dim> operator*(const Vec<T, Dim>& first, const Vec<T, Dim>& second) {
+        Vec<T, Dim> first_cpy = first;
         first_cpy *= second;
         return first_cpy;
     }
 
     CUDA_HOSTDEV
-    friend Vec3<T> operator/(const Vec3<T>& first, const Vec3<T>& second) {
-        Vec3<T> first_cpy = first;
+    friend Vec<T, Dim> operator/(const Vec<T, Dim>& first, const Vec<T, Dim>& second) {
+        Vec<T, Dim> first_cpy = first;
         first_cpy /= second;
         return first_cpy;
     }
 
     CUDA_HOSTDEV
-    friend Vec3<T> operator*(T coef, const Vec3<T>& vec) {
-        Vec3<T> vec_cpy = vec;
+    friend Vec<T, Dim> operator*(T coef, const Vec<T, Dim>& vec) {
+        Vec<T, Dim> vec_cpy = vec;
         vec_cpy *= coef;
         return vec_cpy;
     }
 
     CUDA_HOSTDEV
     T squared_norm() const {
-        return Vec3<T>::dot(*this, *this);
+        return linear::dot<T, Dim>(*this, *this);
     }
 
     CUDA_HOSTDEV
@@ -137,22 +154,55 @@ public:
     }
 
     CUDA_HOSTDEV
-    Vec3<T> normalized() const {
+    Vec<T, Dim> normalized() const {
         T len = this->len();
-        return scaled(1 / len);
+        return (1 / len) * *this;
     }
 
     CUDA_HOSTDEV
-    Vec3<T> negated() const {
+    Vec<T, Dim> negated() const {
         return operator*=(-1);
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const Vec3<T>& vec) {
-        os << "[" << vec[0] << ", " << vec[1] << ", " << vec[2] << "]"; 
+    friend std::ostream& operator<<(std::ostream& os, const Vec<T, Dim>& vec) {
+        os << "[";
+        for (int i = 0; i < Dim; i++) {
+            os << vec[i];
+            if (i < Dim - 1) {
+                os << ", ";
+            }
+        }
+        os << "]";
         return os;
     }
 };
 
+template <typename T, int Dim>
+CUDA_HOSTDEV
+T dot(const Vec<T, Dim>& first, const Vec<T, Dim>& second) {
+    T dot_product = 0;
+    for (int i = 0; i < Dim; i++) {
+        dot_product += first[i] * second[i];
+    }
+    return dot_product;
+}
+
+template<typename T>
+CUDA_HOSTDEV
+Vec<T, 3> cross(const Vec<T, 3>& first, const Vec<T, 3>& second) {
+    float x = first[1] * second[2] - first[2] * second[1];
+    float y = first[2] * second[0] - first[0] * second[2];
+    float z = first[0] * second[1] - first[1] * second[0];
+    Vec<T, 3> output = Vec<T, 3>(x, y, z);
+    assert(abs(dot(first, output)) <= THRESHOLD);
+    assert(abs(dot(second, output)) <= THRESHOLD);
+    return output;
+}
+
+template<typename T>
+using Vec3 = Vec<T, 3>;
+template<typename T>
+using Vec4 = Vec<T, 4>; 
 
 template <typename T>
 class Mat3 {
@@ -222,22 +272,30 @@ public:
     }
 
     CUDA_HOSTDEV
-    static Mat3<T> multiply(const Mat3<T>& a, const Mat3<T>& b) {
+    Mat3<T>& operator*=(const Mat3<T>& other) {
         float inner[3][3];
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 float sum = 0;
                 for (int k = 0; k < 3; k++) {
-                    sum += a.inner[i][k] * b.inner[k][j];
+                    sum += this->inner[i][k] * other.inner[k][j];
                 }
                 inner[i][j] = sum;
             }
         }
-        return Mat3<T>(inner);
+        this->inner = inner;
+        return *this;
     } 
 
     CUDA_HOSTDEV
-    static Vec3<T> multiplyVec3(const Mat3<T>& arr, const Vec3<T>& to_multiply) {
+    friend Mat3<T> operator*(const Mat3<T>& mat1, const Mat3<T>& mat2) {
+        Mat3<T> mat1_cpy = mat1;
+        mat1_cpy *= mat2;
+        return mat1_cpy;
+    }
+
+    CUDA_HOSTDEV
+    friend Vec3<T> operator*(const Mat3<T>& arr, const Vec3<T>& to_multiply) {
         T new_coords[3];
         for (int i = 0; i < 3; i++) {
             T sum = 0;

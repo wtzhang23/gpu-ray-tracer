@@ -15,7 +15,7 @@ namespace raytracer {
         for (int i = idx; i < height * width; i += stride) {
             int row = i / width;
             int col = i % width;
-            canvas.set_color(row, col, canvas::Color(0.5, 1.0, 0.5));
+            canvas.set_color(row, col, canvas::Color(0, 1.0, 0));
         }
     }
 

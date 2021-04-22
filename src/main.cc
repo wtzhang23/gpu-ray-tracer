@@ -10,16 +10,18 @@
 #include "linear.h"
 #include "canvas.h"
 #include "scene.h"
+#include "geometry.h"
 
 const int WIDTH = 640;
 const int HEIGHT = 480;
+const double THRESHOLD = 1E-6;
 
 int main(int argc, const char** argv) {
+    geometry::Quat<float> a{1.0,2.0,3.0,4.0};
+    geometry::Quat<float> b{5.0, 6.0, 7.0, 8.0};
     SDL_Init(SDL_INIT_VIDEO);
     std::shared_ptr<std::atomic_bool> running = std::shared_ptr<std::atomic_bool>(new std::atomic_bool(true));
     
-    canvas::Color col = canvas::Color(1.0, .5, 1.0);
-    std::cout << col << std::endl;
     auto io_thread = std::thread([=]{
         while (running->load()) {
             SDL_Event event;
@@ -52,9 +54,8 @@ int main(int argc, const char** argv) {
         rv = SDL_UpdateWindowSurface(window);
         assert(rv == 0);
     }
-    SDL_FreeSurface(surface);
-
     io_thread.join();
+    SDL_FreeSurface(surface);
     SDL_DestroyWindow(window);
     SDL_Quit();
     return 0;
