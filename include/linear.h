@@ -31,6 +31,11 @@ public:
     }
 
     CUDA_HOSTDEV
+    T operator[](int idx) const {
+        return coords[idx];
+    }
+
+    CUDA_HOSTDEV
     static T dot(const Vec3<T>& first, const Vec3<T>& second) {
         return first[0] * second[0] + first[1] * second[1] + first[2] * second[2];
     }
@@ -47,6 +52,81 @@ public:
     }
 
     CUDA_HOSTDEV
+    Vec3<T>& operator+=(const Vec3<T>& other) {
+        coords[0] += other[0];
+        coords[1] += other[1];
+        coords[2] += other[2];
+        return *this;
+    }
+
+    CUDA_HOSTDEV
+    Vec3<T>& operator-=(const Vec3<T>& other) {
+        coords[0] -= other[0];
+        coords[1] -= other[1];
+        coords[2] -= other[2];
+        return *this;
+    }
+
+    CUDA_HOSTDEV
+    Vec3<T>& operator*=(const Vec3<T>& other) {
+        coords[0] *= other[0];
+        coords[1] *= other[1];
+        coords[2] *= other[2];
+        return *this;
+    }
+
+    CUDA_HOSTDEV
+    Vec3<T>& operator/=(const Vec3<T>& other) {
+        coords[0] /= other[0];
+        coords[1] /= other[1];
+        coords[2] /= other[2];
+        return *this;
+    }
+
+    CUDA_HOSTDEV
+    Vec3<T>& operator*=(T coef) const {
+        coords[0] *= coef;
+        coords[1] *= coef;
+        coords[2] *= coef;
+        return *this;
+    }
+
+    CUDA_HOSTDEV
+    friend Vec3<T> operator+(const Vec3<T>& first, const Vec3<T>& second) {
+        Vec3<T> first_cpy = first;
+        first_cpy += second;
+        return first_cpy;
+    }
+
+    CUDA_HOSTDEV
+    friend Vec3<T> operator-(const Vec3<T>& first, const Vec3<T>& second) {
+        Vec3<T> first_cpy = first;
+        first_cpy -= second;
+        return first_cpy;
+    }
+
+    CUDA_HOSTDEV
+    friend Vec3<T> operator*(const Vec3<T>& first, const Vec3<T>& second) {
+        Vec3<T> first_cpy = first;
+        first_cpy *= second;
+        return first_cpy;
+    }
+
+    CUDA_HOSTDEV
+    friend Vec3<T> operator/(const Vec3<T>& first, const Vec3<T>& second) {
+        Vec3<T> first_cpy = first;
+        first_cpy /= second;
+        return first_cpy;
+    }
+
+    CUDA_HOSTDEV
+    friend Vec3<T> operator*(T coef, const Vec3<T>& vec) {
+        Vec3<T> vec_cpy = vec;
+        vec_cpy *= coef;
+        return vec_cpy;
+    }
+
+    CUDA_HOSTDEV
     T squared_norm() const {
         return Vec3<T>::dot(*this, *this);
     }
@@ -59,30 +139,12 @@ public:
     CUDA_HOSTDEV
     Vec3<T> normalized() const {
         T len = this->len();
-        if (len > THRESHOLD) {
-            return scaled(1 / len);
-        } else {
-            return Vec3<T>::zero();
-        }
+        return scaled(1 / len);
     }
 
     CUDA_HOSTDEV
     Vec3<T> negated() const {
-        return scaled(-1);
-    }
-
-    CUDA_HOSTDEV
-    Vec3<T> scaled(T coef) const {
-        T new_coords[3];
-        new_coords[0] = coords[0] * coef;
-        new_coords[1] = coords[1] * coef;
-        new_coords[2] = coords[2] * coef;
-        return Vec3<T>(new_coords);
-    }
-
-    CUDA_HOSTDEV
-    T operator[](int idx) const {
-        return coords[idx];
+        return operator*=(-1);
     }
 
     friend std::ostream& operator<<(std::ostream& os, const Vec3<T>& vec) {
