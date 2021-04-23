@@ -177,6 +177,12 @@ public:
     }
 };
 
+template<typename T>
+using Vec3 = Vec<T, 3>; 
+
+template<typename T>
+using Vec4 = Vec<T, 4>; 
+
 template <typename T, int Dim>
 CUDA_HOSTDEV
 T dot(const Vec<T, Dim>& first, const Vec<T, Dim>& second) {
@@ -200,9 +206,32 @@ Vec<T, 3> cross(const Vec<T, 3>& first, const Vec<T, 3>& second) {
 }
 
 template<typename T>
-using Vec3 = Vec<T, 3>;
+CUDA_HOSTDEV
+Vec<T, 3> reflect(const Vec<T, 3>& dir, const Vec<T, 3>& norm) {
+    // TODO: test
+    Vec<T, 3> d_norm = dir.normalized();
+    Vec<T, 3> n_norm = norm.normalized();
+    Vec<T, 3> projection = dot(d_norm, n_norm) * n_norm;
+    return d_norm - 2 * n_norm;
+}
+
 template<typename T>
-using Vec4 = Vec<T, 4>; 
+CUDA_HOSTDEV
+Vec<T, 3> refract(const Vec<T, 3>& dir, const Vec<T, 3>& norm, T index_from, T index_to, bool& tir) {
+    // TODO: test
+    Vec<T, 3> d_norm = dir.normalized();
+    Vec<T, 3> n_norm = norm.normalized();
+    T index_ratio = index_from / index_to;
+    T cosi = dot(d_norm, n_norm);
+    T sint_2 = index_ratio * index_ratio * (1 - cosi * cosi);
+    if (sint_2 > 1) {
+        tir = true;
+        return reflect(d_norm, n_norm);
+    } else {
+        tir = false;
+        return index_ratio * d_norm + (index_ratio * cosi - sqrt(1 - sint_2)) * n_norm;
+    }
+}
 
 template <typename T>
 class Mat3 {
