@@ -8,10 +8,10 @@
 #include <atomic>
 #include <cmath>
 #include "raytracer.h"
-#include "linear.h"
-#include "canvas.h"
-#include "scene.h"
-#include "geometry.h"
+#include "raymath/linear.h"
+#include "rayenv/canvas.h"
+#include "rayenv/scene.h"
+#include "raymath/geometry.h"
 
 const int WIDTH = 640;
 const int HEIGHT = 480;
@@ -37,13 +37,13 @@ int main(int argc, const char** argv) {
     SDL_Window* window = SDL_CreateWindow("Ray Tracer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
                                                             WIDTH, HEIGHT, SDL_WINDOW_RESIZABLE);
     SDL_Surface* screen = SDL_GetWindowSurface(window);
-    canvas::Canvas canvas{WIDTH, HEIGHT};
-    scene::Camera<float> camera{M_PI / 4, canvas};
-    scene::Scene<float> scene{canvas, camera};
-    int rmask = canvas::Color::rmask();
-    int gmask = canvas::Color::gmask();
-    int bmask = canvas::Color::bmask();
-    int amask = canvas::Color::amask();
+    renv::Canvas canvas{WIDTH, HEIGHT};
+    renv::Camera<float> camera{M_PI / 4, canvas};
+    renv::Scene<float> scene{canvas, camera};
+    int rmask = renv::Color::rmask();
+    int gmask = renv::Color::gmask();
+    int bmask = renv::Color::bmask();
+    int amask = renv::Color::amask();
     SDL_Surface* surface = NULL;
     canvas.get_surface(&surface);
     assert(surface != NULL);

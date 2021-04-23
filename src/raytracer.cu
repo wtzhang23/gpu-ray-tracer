@@ -1,33 +1,37 @@
-#include "linear.h"
+#include "raymath/linear.h"
 #include "raytracer.h"
 #include "iostream"
 
 namespace raytracer {
     template <typename T>
     __global__
-    void color_green(scene::Scene<T> scene) {
-        canvas::Canvas& canvas = scene.get_canvas();
-        int height = canvas.get_height();
-        int width = canvas.get_width();
+    void trace(renv::Scene<T> scene) {
+        renv::Canvas& canvas = scene.get_canvas();
         
-        int idx = blockDim.x * blockIdx.x + threadIdx.x;
-        int stride = blockDim.x * gridDim.x;
+        int x = blockDim.x * blockIdx.x + threadIdx.x;
+        int y = blockDim.y * blockIdx.y + threadIdx.y;
+        int stride_x = blockDim.x * gridDim.x;
+        int stride_y = blockDim.y * gridDim.y;
 
-        for (int i = idx; i < height * width; i += stride) {
-            int row = i / width;
-            int col = i % width;
-            canvas.set_color(row, col, canvas::Color(0, 1.0, 0));
+        for (int i = x; i < canvas.get_width(); i += stride_x) {
+            for (int j = y; j < canvas.get_height(); j += stride_y) {
+                canvas.set_color(i, j, renv::Color(0, 1.0f, 0));
+            }
         }
     }
 
     template <typename T>
-    void update_scene(scene::Scene<T>& scene) {
-        color_green<<<1024, 1024>>>(scene);
+    void update_scene(renv::Scene<T>& scene) {
+        dim3 dimBlock(32, 32);
+        int grid_dim_x = scene.get_canvas().get_width() / 32;
+        int grid_dim_y = scene.get_canvas().get_height() / 32;
+        dim3 dimGrid(grid_dim_x == 0 ? 1 : grid_dim_x, grid_dim_y == 0 ? 1 : grid_dim_y);
+        trace<<<dimGrid, dimBlock>>>(scene);
         int rv = cudaDeviceSynchronize();
         assert(rv == 0);
-        canvas::Canvas& canvas = scene.get_canvas();
+        renv::Canvas& canvas = scene.get_canvas();
     }
 
-    template void update_scene<double>(scene::Scene<double>& scene);
-    template void update_scene<float>(scene::Scene<float>& scene);
+    template void update_scene<double>(renv::Scene<double>& scene);
+    template void update_scene<float>(renv::Scene<float>& scene);
 }

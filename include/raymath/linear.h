@@ -14,7 +14,7 @@
 
 extern const double THRESHOLD;
 
-namespace linear {
+namespace rmath {
 template <typename T, int Dim>
 class Vec;
 
@@ -145,7 +145,7 @@ public:
 
     CUDA_HOSTDEV
     T squared_norm() const {
-        return linear::dot<T, Dim>(*this, *this);
+        return rmath::dot<T, Dim>(*this, *this);
     }
 
     CUDA_HOSTDEV
