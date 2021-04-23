@@ -48,7 +48,7 @@ int main(int argc, const char** argv) {
     canvas.get_surface(&surface);
     assert(surface != NULL);
     while (running->load()) {
-        raytracer::update_scene(scene);
+        rtracer::update_scene(scene);
         int rv = SDL_BlitSurface(surface, NULL, screen, NULL);
         assert(rv == 0);
         rv = SDL_UpdateWindowSurface(window);

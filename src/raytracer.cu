@@ -2,7 +2,7 @@
 #include "raytracer.h"
 #include "iostream"
 
-namespace raytracer {
+namespace rtracer {
     template <typename T>
     __global__
     void trace(renv::Scene<T> scene) {

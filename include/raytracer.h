@@ -3,7 +3,7 @@
 
 #include "rayenv/scene.h"
 
-namespace raytracer {
+namespace rtracer {
     template <typename T>
     void update_scene(renv::Scene<T>& scene);
 }

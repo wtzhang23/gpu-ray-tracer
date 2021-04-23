@@ -1,7 +1,10 @@
 #ifndef TRIMESH_H
 #define TRIMESH_H
 
+#include <vector>
 #include "rayprimitives/primitive.h"
+#include "raymath/linear.h"
+#include "raymath/geometry.h"
 
 #ifdef __CUDACC__
 #define CUDA_HOSTDEV __host__ __device__
@@ -10,6 +13,12 @@
 #endif
 
 namespace primitives {
+template <typename T>
+class TrimeshBuilder {
+private:
+    
+}
+
 template<typename T>
 class Trimesh {
 private:
@@ -24,9 +33,9 @@ private:
     int* vertex_a;
     int* vertex_b;
     int* vertex_c;
+    rmath::Vec3 p;
+    rmath::Quat o;
 public:
-    Trimesh(int n_triangles) {}
-
     CUDA_HOSTDEV
     ~Trimesh() {}
 };
