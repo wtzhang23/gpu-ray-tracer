@@ -12,6 +12,7 @@
 #include "rayenv/canvas.h"
 #include "rayenv/scene.h"
 #include "raymath/geometry.h"
+#include "rayprimitives/trimesh.h"
 
 const int WIDTH = 640;
 const int HEIGHT = 480;

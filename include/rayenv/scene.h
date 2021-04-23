@@ -5,7 +5,7 @@
 #include "raymath/linear.h"
 #include "raymath/geometry.h"
 #include "rayenv/canvas.h"
-#include "entity.h"
+#include "rayprimitives/entity.h"
 
 #ifdef __CUDACC__
 #define CUDA_HOSTDEV __host__ __device__
@@ -15,13 +15,13 @@
 
 namespace renv {
 template <typename T>
-class Camera: private rentity::Entity<T> {
+class Camera: private rprimitives::Entity<T> {
 private:
     T near;
     int width;
     int height;
 public:
-    Camera(T fov, const Canvas& canvas): rentity::Entity<T>(rmath::Vec3<T>(), rmath::Quat<T>::identity()), near(0.5 * canvas.get_width() / tan(fov)), 
+    Camera(T fov, const Canvas& canvas): rprimitives::Entity<T>(rmath::Vec3<T>(), rmath::Quat<T>::identity()), near(0.5 * canvas.get_width() / tan(fov)), 
                                                     width(canvas.get_width()), height(canvas.get_height()) {}
 
     rmath::Vec3<T> pos() const {

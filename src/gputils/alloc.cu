@@ -1,9 +1,8 @@
-#include "gpu_alloc.h"
+#include "gputils/alloc.h"
 #include <cassert>
 
-namespace gpu_alloc {
-
-void* create_buffer(int n_data, int data_size) {
+namespace gputils {
+void* create_buffer(const int n_data, const int data_size) {
     void* buffer;
     auto rv = cudaMallocManaged(&buffer, data_size * n_data);
     assert(rv == 0);

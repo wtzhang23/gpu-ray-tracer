@@ -4,7 +4,7 @@
 #include "raymath/linear.h"
 #include "raymath/geometry.h"
 
-namespace rentity {
+namespace rprimitives {
 
 template <typename T>
 class Entity {
