@@ -19,45 +19,33 @@
 
 namespace rprimitives {
 template<typename T>
-class Trimesh;
-
-template<typename T>
-class Triangle {
-private:
-    rmath::Vec3<T> a;
-    rmath::Vec3<T> b;
-    rmath::Vec3<T> c;
-    rmath::Vec3<T> n;
-
-    CUDA_HOSTDEV
-    Triangle(rmath::Vec3<T> vertex_a, rmath::Vec3<T> vertex_b, rmath::Vec3<T> vertex_c, rmath::Vec3<T> norm): a(vertex_a), b(vertex_b), c(vertex_c), n(norm){}
-public:
-    friend class Trimesh<T>;
-};
-
-template<typename T>
 class Trimesh: private Entity<T> {
 private:
-    gputils::FlatVec<T, 3> vertices;
-    gputils::FlatVec<T, 3> normals;
-    gputils::FlatVec<int, 3> triangles;
+    gputils::TextureBuffer3D<T> vertices;
+    gputils::TextureBuffer3D<T> normals;
+    gputils::TextureBuffer3D<int> triangles;
 public:
     CUDA_HOSTDEV
-    Triangle<T> get_triangle(int i) {
-        int triangle[3] = rmath::Vec3<T>(triangles.get_vec(i));
-        rmath::Vec3<T> a = rmath::Vec3<T>(vertices.get_vec(triangle[0]));
-        rmath::Vec3<T> b = rmath::Vec3<T>(vertices.get_vec(triangle[1]));
-        rmath::Vec3<T> c = rmath::Vec3<T>(vertices.get_vec(triangle[2]));
-        rmath::Vec3<T> n = rmath::Vec3<T>(normals.get_vec(i));
-        return Triangle<T>(a, b, c, n);
+    const gputils::TextureBuffer3D<T>& get_vertices() const {
+        return vertices;
+    }
+
+    CUDA_HOSTDEV
+    const gputils::TextureBuffer3D<T>& get_normals() const {
+        return normals;
+    }
+
+    CUDA_HOSTDEV
+    const gputils::TextureBuffer3D<int>& get_triangles() const {
+        return triangles;
     }
 };
 
 template <typename T>
 void free_trimesh(Trimesh<T>& mesh) {
-    gputils::free_vec(mesh.vertices);
-    gputils::free_vec(mesh.normals);
-    gputils::free_vec(mesh.triangles);
+    gputils::free_texture_buffer(mesh.vertices);
+    gputils::free_texture_buffer(mesh.normals);
+    gputils::free_texture_buffer(mesh.triangles);
 }
 
 template <typename T>
@@ -86,7 +74,7 @@ public:
         const int nv = vertices.size();
         const int nt = triangles.size();
         std::vector<rmath::Vec3<T>> vert_norm = std::vector<rmath::Vec3<T>>(nv, rmath::Vec3<T>(0, 0, 0));
-        for (int tri[3] : triangles) {
+        for (std::array<int, 3> tri : triangles) {
             rmath::Vec3<T> v1 = vertices[tri[0]], v2 = vertices[tri[1]], v3 = vertices[tri[2]];
             rmath::Vec3<T> leg1 = v2 - v1;
             rmath::Vec3<T> leg2 = v3 - v1;
@@ -100,23 +88,9 @@ public:
             vert_norm[i] = vert_norm[i].normalized();
         }
 
-        gputils::FlatVec<T, 3> verts(nv);
-        gputils::FlatVec<T, 3> norms(nv);
-        gputils::FlatVec<int, 3> tris(nv);
-
-        for (int i = 0; i < nv; i++) {
-            rmath::Vec3<T> vertex = vertices[i];
-            rmath::Vec3<T> norm = vert_norm[i];
-            verts.set_vec(i, {vertex[0], vertex[1], vertex[2]});
-            verts.set_vec(i, {norm[0], norm[1], norm[2]});
-        }
-
-        for (int i = 0; i < nt; i++) {
-            int tri[3] = triangles[i];
-            tris.set_vec(i, tri);
-        }
-
-        return Trimesh<T>{verts, norms, tris};
+        return Trimesh<T>{gputils::TextureBuffer3D<float>(vertices.data(), nv, 0), 
+                          gputils::TextureBuffer3D<float>(vert_norm.data(), nv, 0),
+                          gputils::TextureBuffer3D<int>(triangles.data(), nt, 0)};
     }
 };
 }

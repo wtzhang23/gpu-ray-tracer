@@ -1,6 +1,8 @@
 #include "raymath/linear.h"
 #include "raytracer.h"
 #include "iostream"
+#include "rayprimitives/trimesh.cuh"
+#include "rayprimitives/texture.cuh"
 
 namespace rtracer {
     template <typename T>

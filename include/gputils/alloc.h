@@ -42,14 +42,14 @@ public:
 
         cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(sizeof(T) * 8, y_chn_bits, z_chn_bits, 
                                                                                     w_chn_bits, cudaChannelFormatKindFloat);
-        cudaMallocArray(&cu_array, &channelDesc, width, height);
+        cudaMallocArray(&cu_array, &channelDesc, width * Dim, height * Dim);
         int memcpyHeight;
         if (height == 0) {
             memcpyHeight = 1;
         } else {
             memcpyHeight = height;
         }
-        cudaMemcpy2DToArray(cu_array, 0, 0, buffer, sizeof(T) * width, sizeof(T) * height, memcpyHeight, cudaMemcpyHostToDevice);
+        cudaMemcpy2DToArray(cu_array, 0, 0, buffer, sizeof(T) * width * Dim, sizeof(T) * height * Dim, memcpyHeight, cudaMemcpyHostToDevice);
         
         cudaResourceDesc resDesc = {};
         resDesc.res.array.array = cu_array;
@@ -63,6 +63,21 @@ public:
         texDesc.normalizedCoords = false;
 
         cudaCreateTextureObject(&obj, &resDesc, &texDesc, NULL);
+    }
+
+    CUDA_HOSTDEV
+    cudaTextureObject_t get_obj() {
+        return obj;
+    }
+
+    CUDA_HOSTDEV
+    int get_width() const {
+        return width;
+    }
+
+    CUDA_HOSTDEV
+    int get_height() const {
+        return height;
     }
 };
 extern void* create_buffer(const int n_data, const int data_size);
