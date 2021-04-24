@@ -13,4 +13,15 @@ void free_buffer(void* buffer) {
     auto rv = cudaFree(buffer);
     assert(rv == 0);
 }
+
+class TextureBuffer<float, 1>;
+class TextureBuffer<float, 2>;
+class TextureBuffer<float, 3>;
+class TextureBuffer<float, 4>;
+
+class TextureBuffer<int, 1>;
+class TextureBuffer<int, 2>;
+class TextureBuffer<int, 3>;
+class TextureBuffer<int, 4>;
 }
+

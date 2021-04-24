@@ -18,6 +18,7 @@ private:
     T* inner;
     int n_elems;
 public:
+    FlatVec(): inner(NULL), n_elems(0){}
     FlatVec(int n_elems): inner(gputils::create_buffer(Dim * n_elems, sizeof(T))), n_elems(n_elems){}
 
     CUDA_HOSTDEV

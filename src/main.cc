@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <atomic>
 #include <cmath>
+#include <cuda.h>
 #include "raytracer.h"
 #include "raymath/linear.h"
 #include "rayenv/canvas.h"
