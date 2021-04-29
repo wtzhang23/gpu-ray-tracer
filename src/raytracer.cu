@@ -1,13 +1,11 @@
 #include "raymath/linear.h"
 #include "raytracer.h"
 #include "iostream"
-#include "rayprimitives/trimesh.cuh"
 #include "rayprimitives/texture.cuh"
 
 namespace rtracer {
-    template <typename T>
     __global__
-    void trace(renv::Scene<T> scene) {
+    void trace(renv::Scene scene) {
         renv::Canvas& canvas = scene.get_canvas();
         
         int x = blockDim.x * blockIdx.x + threadIdx.x;
@@ -22,8 +20,7 @@ namespace rtracer {
         }
     }
 
-    template <typename T>
-    void update_scene(renv::Scene<T>& scene) {
+    void update_scene(renv::Scene& scene) {
         dim3 dimBlock(32, 32);
         int grid_dim_x = scene.get_canvas().get_width() / 32;
         int grid_dim_y = scene.get_canvas().get_height() / 32;
@@ -33,7 +30,4 @@ namespace rtracer {
         assert(rv == 0);
         renv::Canvas& canvas = scene.get_canvas();
     }
-
-    template void update_scene<double>(renv::Scene<double>& scene);
-    template void update_scene<float>(renv::Scene<float>& scene);
 }

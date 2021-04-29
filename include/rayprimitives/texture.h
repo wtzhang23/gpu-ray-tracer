@@ -13,29 +13,21 @@
 #endif
 
 namespace rprimitives {
-template <typename T>
 class Texture {
 private:
-    const union TexInner {
-        rmath::Vec3<T> singleton;
-        gputils::TextureBuffer3D<T> texture;
-        TexInner(rmath::Vec3<T> singleton): singleton(singleton){}
-        TexInner(gputils::TextureBuffer3D<T> texture): texture(texture){}
-    } color;
-    bool is_singleton;
+    gputils::TextureBuffer4D<float> texture;
 
-    static rmath::Vec3<T> color_to_vec(renv::Color c) {
-        return (T) 1 / UINT8_MAX * rmath::Vec3<T>((T) c.r(), (T) c.g(), (T) c.b());
-    }
+    CUDA_HOSTDEV
+    static rmath::Vec4<float> color_to_vec(renv::Color c);
 
+    static void free(Texture& texture);
 public:
-    Texture(gputils::TextureBuffer3D<T> texture): is_singleton(false), color(texture) {
-        // TODO
+    Texture(gputils::TextureBuffer4D<float> texture): texture(texture) {}
+
+    CUDA_HOSTDEV
+    gputils::TextureBuffer4D<float>& get_buffer() {
+        return texture;
     }
-
-    Texture(renv::Color color): is_singleton(true), color(color_to_vec(color)){}
-
-    Texture(): Texture(renv::Color(1.0f, 1.0f, 1.0f, 1.0f)){}
 };
 }
 

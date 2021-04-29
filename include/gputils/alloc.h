@@ -18,7 +18,6 @@ private:
     cudaArray_t cu_array;
     int height;
     int width;
-
 public:
     TextureBuffer<T, Dim>(T* buffer, int width, int height): obj(), cu_array(), height(height), width(width) {
         int y_chn_bits;
@@ -41,7 +40,7 @@ public:
         }
 
         cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(sizeof(T) * 8, y_chn_bits, z_chn_bits, 
-                                                                                    w_chn_bits, cudaChannelFormatKindFloat);
+                                                                                    w_chn_bits, cudaChannelFormatKindNone);
         cudaMallocArray(&cu_array, &channelDesc, width * Dim, height * Dim);
         int memcpyHeight;
         if (height == 0) {
@@ -65,6 +64,11 @@ public:
         cudaCreateTextureObject(&obj, &resDesc, &texDesc, NULL);
     }
 
+    static void free(TextureBuffer<T, Dim>& buf) {
+        cudaDestroyTextureObject(buf.obj);
+        cudaFreeArray(buf.cu_array);
+    }
+
     CUDA_HOSTDEV
     cudaTextureObject_t get_obj() {
         return obj;
@@ -82,12 +86,6 @@ public:
 };
 extern void* create_buffer(const int n_data, const int data_size);
 extern void free_buffer(void* buffer);
-
-template <typename T, int Dim>
-void free_texture_buffer(TextureBuffer<T, Dim>& buf) {
-    cudaDestroyTextureObject(buf.obj);
-    cudaFreeArray(buf.cu_array);
-}
 
 template <typename T>
 using TextureBuffer1D = TextureBuffer<T, 1>;

@@ -11,21 +11,23 @@
 #endif
 
 namespace rprimitives {
-template <typename T>
 class Material {
 private:
-    rmath::Vec3<T> Ke;
-    rmath::Vec3<T> Kd;
-    rmath::Vec3<T> Ks;    
-    rmath::Vec3<T> Kt;
-    rmath::Vec3<T> Kr;
-    T alpha;
-    T eta;
+    rmath::Vec3<float> Ke;
+    rmath::Vec3<float> Kd;
+    rmath::Vec3<float> Ks;    
+    rmath::Vec3<float> Kt;
+    rmath::Vec3<float> Kr;
+    float alpha;
+    float eta;
 public:
-    Material(rmath::Vec3<T> Ke, rmath::Vec3<T> Kd, rmath::Vec3<T> Ks, rmath::Vec3<T> Kt, rmath::Vec3<T> Kr,
-                T alpha, T eta): Ke(Ke), Kd(Kd), Ks(Ks), Kt(Kt), Kr(Kr), alpha(alpha), eta(eta){}
-    Material(): Material(rmath::Vec3<T>(1, 1, 1), rmath::Vec3<T>(0, 0, 0), rmath::Vec3<T>(0, 0, 0),
-                rmath::Vec3<T>(0, 0, 0), rmath::Vec3<T>(0, 0, 0), rmath::Vec3<T>(0, 0, 0)){}
+    CUDA_HOSTDEV
+    Material(rmath::Vec3<float> Ke, rmath::Vec3<float> Kd, rmath::Vec3<float> Ks, rmath::Vec3<float> Kt, rmath::Vec3<float> Kr,
+                float alpha, float eta): Ke(Ke), Kd(Kd), Ks(Ks), Kt(Kt), Kr(Kr), alpha(alpha), eta(eta){}
+    
+    CUDA_HOSTDEV
+    Material(): Material(rmath::Vec3<float>({1.0f, 1.0f, 1.0f}), rmath::Vec3<float>(), rmath::Vec3<float>(),
+                rmath::Vec3<float>(), rmath::Vec3<float>(), 0, 0){}
 
 };
 }

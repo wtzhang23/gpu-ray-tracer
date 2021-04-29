@@ -11,10 +11,8 @@
 #include <cassert>
 #include <iostream>
 #include <initializer_list>
-
-extern const double THRESHOLD;
-
 namespace rmath {
+constexpr double THRESHOLD = 1E-6f;
 template <typename T, int Dim>
 class Vec;
 
@@ -144,6 +142,11 @@ public:
     }
 
     CUDA_HOSTDEV
+    friend Vec<T, Dim> operator-(const Vec<T, Dim>& vec) {
+        return (T) -1 * vec;
+    }
+
+    CUDA_HOSTDEV
     T squared_norm() const {
         return rmath::dot<T, Dim>(*this, *this);
     }
@@ -199,7 +202,7 @@ Vec<T, 3> cross(const Vec<T, 3>& first, const Vec<T, 3>& second) {
     float x = first[1] * second[2] - first[2] * second[1];
     float y = first[2] * second[0] - first[0] * second[2];
     float z = first[0] * second[1] - first[1] * second[0];
-    Vec<T, 3> output = Vec<T, 3>(x, y, z);
+    Vec<T, 3> output = Vec<T, 3>({x, y, z});
     assert(abs(dot(first, output)) <= THRESHOLD);
     assert(abs(dot(second, output)) <= THRESHOLD);
     return output;

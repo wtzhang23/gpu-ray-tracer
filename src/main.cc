@@ -17,7 +17,6 @@
 
 const int WIDTH = 640;
 const int HEIGHT = 480;
-const double THRESHOLD = 1E-6;
 
 int main(int argc, const char** argv) {
     SDL_Init(SDL_INIT_VIDEO);
@@ -40,8 +39,8 @@ int main(int argc, const char** argv) {
                                                             WIDTH, HEIGHT, SDL_WINDOW_RESIZABLE);
     SDL_Surface* screen = SDL_GetWindowSurface(window);
     renv::Canvas canvas{WIDTH, HEIGHT};
-    renv::Camera<float> camera{M_PI / 4, canvas};
-    renv::Scene<float> scene{canvas, camera};
+    renv::Camera camera{M_PI / 4, canvas};
+    renv::Scene scene{canvas, camera};
     int rmask = renv::Color::rmask();
     int gmask = renv::Color::gmask();
     int bmask = renv::Color::bmask();

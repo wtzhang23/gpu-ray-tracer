@@ -21,6 +21,10 @@ public:
     FlatVec(): inner(NULL), n_elems(0){}
     FlatVec(int n_elems): inner(gputils::create_buffer(Dim * n_elems, sizeof(T))), n_elems(n_elems){}
 
+    static void free(FlatVec<T, Dim>& vec) {
+        gputils::free_buffer((void*) vec.inner);
+    }
+
     CUDA_HOSTDEV
     int size() const {
         return n_elems;
@@ -51,11 +55,6 @@ public:
         }
     }
 };
-
-template <typename T, int Dim>
-void free_vec(FlatVec<T, Dim>& vec) {
-    gputils::free_buffer((void*) vec.inner);
-}
 }
 
 #endif

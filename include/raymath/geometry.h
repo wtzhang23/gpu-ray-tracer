@@ -13,8 +13,6 @@
 #include <cmath>
 #include "raymath/linear.h"
 
-extern const double THRESHOLD;
-
 namespace rmath {
 template <typename T>
 class Quat {
@@ -77,38 +75,47 @@ public:
         inner = (0.5 / sqrt(t) * inner).normalized();
     }
 
+    CUDA_HOSTDEV
     static Quat<T> identity() {
         return Quat<T>(0, 0, 0, 1);
     }
 
+    CUDA_HOSTDEV
     Vec4<T> to_Vec4() const {
         return inner;
     }
 
+    CUDA_HOSTDEV
     T& operator[](int idx) {
         return inner[idx];
     }
 
+    CUDA_HOSTDEV
     friend T dot(Quat& a, Quat& b) {
         return dot(a.inner, b.inner);
     }
 
+    CUDA_HOSTDEV
     T r() const {
         return inner[3];
     }
 
+    CUDA_HOSTDEV
     T i() const {
         return inner[0];
     }
 
+    CUDA_HOSTDEV
     T j() const {
         return inner[1];
     }
 
+    CUDA_HOSTDEV
     T k() const {
         return inner[2];
     }
 
+    CUDA_HOSTDEV
     Vec3<T> axis() const {
         T im_len = imaginary_len();
         if (im_len < THRESHOLD) {
@@ -118,6 +125,7 @@ public:
         }
     }
 
+    CUDA_HOSTDEV
     T angle() const {
         T im_len = imaginary_len();
         if (im_len < THRESHOLD || r() < THRESHOLD) {
@@ -127,10 +135,12 @@ public:
         }
     }
 
+    CUDA_HOSTDEV
     Quat<T> conjugate() const {
         return Quat<T>(-i(), -j(), -k(), r());
     }
 
+    CUDA_HOSTDEV
     Quat<T> inverse() const {
         T sq_norm = inner.squared_norm();
         
@@ -142,6 +152,7 @@ public:
         return Quat<T>(i() * -inv_sq_norm, j() * -inv_sq_norm, k() * -inv_sq_norm, r() * inv_sq_norm);
     }
 
+    CUDA_HOSTDEV
     Quat<T> normalized() const {
         return Quat<T>(inner.normalized());
     }
@@ -198,18 +209,52 @@ private:
     Vec3<T> o;
     Vec3<T> d;
 public:
-    Ray(Vec3<T> orientation, Vec3<T> direction): o(orientation), d(direction.normalized()) {}
+    CUDA_HOSTDEV
+    Ray(Vec3<T> origin, Vec3<T> direction): o(origin), d(direction.normalized()) {}
 
-    Ray origin() {
+    CUDA_HOSTDEV
+    Vec3<T> origin() const {
         return o;
     }
 
-    Ray direction() {
+    CUDA_HOSTDEV
+    Vec3<T> direction() const {
         return d;
     }
 
-    Vec3<T> at(T dt) {
-        return o + d * dt;
+    CUDA_HOSTDEV
+    Vec3<T> at(T dt) const {
+        return o + dt * d;
+    }
+};
+
+template <typename T>
+class Plane {
+private:
+    Vec3<T> o;
+    Vec3<T> n;
+public:
+    CUDA_HOSTDEV
+    Plane(Vec3<T> origin, Vec3<T> norm): o(origin), n(norm.normalized()) {}
+
+    CUDA_HOSTDEV
+    Vec3<T> origin() const {
+        return o;
+    }
+
+    CUDA_HOSTDEV
+    Vec3<T> normal() const {
+        return n;
+    }
+
+    CUDA_HOSTDEV
+    bool hit(const Ray<T>& r, float& time) const {
+        float denom = rmath::dot(r.direction(), n);
+        if (abs(denom) < THRESHOLD) {
+            return false;
+        }
+        time = (1.0f / denom) * rmath::dot(o - r.origin(), n);
+        return true;
     }
 };
 }

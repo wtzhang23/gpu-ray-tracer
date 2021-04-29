@@ -4,8 +4,7 @@
 #include "rayenv/scene.h"
 
 namespace rtracer {
-    template <typename T>
-    void update_scene(renv::Scene<T>& scene);
+    void update_scene(renv::Scene& scene);
 }
 
 #endif
