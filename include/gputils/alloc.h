@@ -20,27 +20,11 @@ private:
     int width;
 public:
     TextureBuffer<T, Dim>(T* buffer, int width, int height): obj(), cu_array(), height(height), width(width) {
-        int y_chn_bits;
-        if (Dim > 1) {
-            y_chn_bits = sizeof(T) * 8;
-        } else {
-            y_chn_bits = 0;
-        }
-        int z_chn_bits;
-        if (Dim > 2) {
-            z_chn_bits = sizeof(T) * 8;
-        } else {
-            z_chn_bits = 0;
-        }
-        int w_chn_bits;
-        if (Dim > 3) {
-            w_chn_bits = sizeof(T) * 8;
-        } else {
-            w_chn_bits = 0;
-        }
-
+        int y_chn_bits = Dim > 1 ? sizeof(T) * 8 : 0;
+        int z_chn_bits = Dim > 2 ? sizeof(T) * 8 : 0;
+        int w_chn_bits = Dim > 3 ? sizeof(T) * 8 : 0;
         cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(sizeof(T) * 8, y_chn_bits, z_chn_bits, 
-                                                                                    w_chn_bits, cudaChannelFormatKindNone);
+                                                                                    w_chn_bits, cudaChannelFormatKindFloat);
         cudaMallocArray(&cu_array, &channelDesc, width * Dim, height * Dim);
         int memcpyHeight;
         if (height == 0) {
@@ -48,15 +32,15 @@ public:
         } else {
             memcpyHeight = height;
         }
-        cudaMemcpy2DToArray(cu_array, 0, 0, buffer, sizeof(T) * width * Dim, sizeof(T) * height * Dim, memcpyHeight, cudaMemcpyHostToDevice);
+        cudaMemcpy2DToArray(cu_array, 0, 0, buffer, width * Dim * sizeof(T), width * Dim * sizeof(T), memcpyHeight, cudaMemcpyHostToDevice);
         
         cudaResourceDesc resDesc = {};
         resDesc.res.array.array = cu_array;
         resDesc.resType = cudaResourceTypeArray;
 
         cudaTextureDesc texDesc = {};
-        texDesc.addressMode[0] = cudaAddressModeBorder;
-        texDesc.addressMode[1] = cudaAddressModeBorder;
+        texDesc.addressMode[0] = cudaAddressModeClamp;
+        texDesc.addressMode[1] = cudaAddressModeClamp;
         texDesc.filterMode = cudaFilterModePoint;
         texDesc.readMode = cudaReadModeElementType;
         texDesc.normalizedCoords = false;

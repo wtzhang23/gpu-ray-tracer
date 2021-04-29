@@ -4,6 +4,7 @@
 #include "raymath/linear.h"
 #include "raymath/geometry.h"
 #include "rayprimitives/material.h"
+#include "rayprimitives/texture.h"
 
 #ifdef __CUDACC__
 #define CUDA_HOSTDEV __host__ __device__
@@ -68,12 +69,18 @@ public:
 
 struct Isect {
     bool hit;
+    bool use_texture;
     float time;
-    rmath::Vec4<float> color;
+    union Shade {
+        rmath::Vec<float, 2> text_coords;
+        rmath::Vec4<float> color;
+        CUDA_HOSTDEV
+        Shade(){}
+    } shading;
     Material mat;
 
     CUDA_HOSTDEV
-    Isect(): hit(false), time(0), color(), mat() {}
+    Isect() {}
 };
 
 class Hitable: public Entity {

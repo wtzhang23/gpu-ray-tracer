@@ -18,9 +18,13 @@ gputils::TextureBuffer4D<float> arr_vec_to_text(std::vector<rmath::Vec3<float>>&
 VertexBuffer::VertexBuffer(std::vector<rmath::Vec3<float>>& vertices, std::vector<rmath::Vec3<float>>& normals): 
         v(arr_vec_to_text<true>(vertices)), n(arr_vec_to_text<false>(normals)){}
 
-Trimesh::Trimesh(std::vector<TriInner> inners, VertexBuffer buffer, Texture texture): buffer(buffer), texture(texture) {
+Trimesh::Trimesh(std::vector<TriInner> inners, VertexBuffer buffer): buffer(buffer) {
     cudaMallocManaged(&this->triangles, sizeof(TriInner) * inners.size());
     cudaMemcpy(this->triangles, inners.data(), sizeof(TriInner) * inners.size(), cudaMemcpyHostToDevice);
+}
+
+void Trimesh::free(Trimesh& mesh) {
+    cudaFree(mesh.triangles);
 }
 
 __device__
@@ -28,7 +32,7 @@ Isect Trimesh::hit_local(const rmath::Ray<float>& local_ray) {
     Isect best_isect{};
     for (int i = 0; i < n_triangles; i++) {
         // TODO: use bvh tree
-        Isect tri_isect = Triangle(triangles[i], buffer, texture).hit(local_ray);
+        Isect tri_isect = Triangle(triangles[i], buffer).hit(local_ray);
         if (tri_isect.hit && (!best_isect.hit || best_isect.time > tri_isect.time)) {
             best_isect = tri_isect;
         }
@@ -37,8 +41,8 @@ Isect Trimesh::hit_local(const rmath::Ray<float>& local_ray) {
 }
 
 __device__
-Triangle::Triangle(const TriInner& inner, VertexBuffer buffer, Texture& texture): 
-                        Hitable(inner), inner(inner), texture(texture) {
+Triangle::Triangle(const TriInner& inner, VertexBuffer buffer): 
+                        Hitable(inner), inner(inner) {
     gputils::TextureBuffer4D<float> v_text = buffer.get_vertices();
     gputils::TextureBuffer4D<float> n_text = buffer.get_normals();
     float4 a = tex1D<float4>(v_text.get_obj(), inner.indices[0]);
@@ -70,15 +74,48 @@ Isect Triangle::hit_local(const rmath::Ray<float>& local_ray) {
         if (abs(bary0 + bary1 + bary2 - 1.0f) <= rmath::THRESHOLD) {
             rv.hit = true;
             rv.mat = inner.mat;
+            rv.use_texture = inner.use_texture;
             if (inner.use_texture) {
                 TriInner::Shade::TextData data = inner.shading.text_data;
-                rv.color = get_color_from_texture(texture, bary1, bary2, data.texture_x, data.texture_y, 
-                                        data.texture_width, data.texture_height);
+                rv.shading.text_coords = rmath::Vec<float, 2>({data.texture_x + bary1 * data.texture_width,
+                                                        data.texture_y + bary2 * data.texture_height});
             } else {
-                rv.color = inner.shading.col;
+                rv.shading.color = inner.shading.col;
             }
         }
     }
     return rv;
+}
+
+std::vector<TriInner> TrimeshBuilder::build(std::vector<rmath::Vec3<float>>& tot_vert, std::vector<rmath::Vec3<float>>& tot_norm) const {
+    std::vector<rmath::Vec3<float>> loc_norm = std::vector<rmath::Vec3<float>>(vertices.size());
+    std::vector<TriInner> triangles = this->triangles;
+    for (TriInner tri : triangles) {
+        rmath::Vec3<int> indices = tri.get_indices();
+        rmath::Vec3<float> a = vertices[indices[0]];
+        rmath::Vec3<float> b = vertices[indices[1]];
+        rmath::Vec3<float> n = rmath::cross(a, b).normalized();
+        loc_norm[indices[0]] += n;
+        loc_norm[indices[1]] += n;
+        loc_norm[indices[2]] += n;
+    }
+
+    int shift = tot_vert.size();
+
+    // create triangles
+    for (TriInner& tri : triangles) {
+        tri.indices += rmath::Vec3<int>({shift, shift, shift});
+    }
+
+    // add vertices
+    for (rmath::Vec3<float> n : loc_norm) {
+        tot_norm.push_back(n.normalized());
+    }
+
+    for (rmath::Vec3<float> v : vertices) {
+        tot_norm.push_back(v);
+    }
+
+    return triangles;
 }
 }

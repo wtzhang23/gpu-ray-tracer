@@ -7,6 +7,7 @@ namespace rtracer {
     __global__
     void trace(renv::Scene scene) {
         renv::Canvas& canvas = scene.get_canvas();
+        rprimitives::Texture& atlas = scene.get_atlas();
         
         int x = blockDim.x * blockIdx.x + threadIdx.x;
         int y = blockDim.y * blockIdx.y + threadIdx.y;
@@ -15,7 +16,8 @@ namespace rtracer {
 
         for (int i = x; i < canvas.get_width(); i += stride_x) {
             for (int j = y; j < canvas.get_height(); j += stride_y) {
-                canvas.set_color(i, j, renv::Color(0, 1.0f, 0));
+                rmath::Vec4<float> norm_col = get_color_from_texture(atlas, i, j);
+                canvas.set_color(i, j, renv::Color(norm_col[0], norm_col[1], norm_col[2], norm_col[3]));
             }
         }
     }

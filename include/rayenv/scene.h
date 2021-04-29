@@ -2,10 +2,12 @@
 #define SCENE_H
 
 #include <array>
+#include <vector>
 #include "raymath/linear.h"
 #include "raymath/geometry.h"
 #include "rayenv/canvas.h"
 #include "rayprimitives/entity.h"
+#include "rayprimitives/texture.h"
 
 #ifdef __CUDACC__
 #define CUDA_HOSTDEV __host__ __device__
@@ -65,11 +67,11 @@ class Scene {
 private:
     Canvas canvas;
     Camera cam;
+    rprimitives::Texture atlas;
+    rprimitives::Hitable** hitables;
+    int n_hitables;
 public:
-    Scene(Canvas& canvas, Camera camera): canvas(canvas), cam(camera){}
-
-    CUDA_HOSTDEV
-    Scene(const Scene&) = default;
+    Scene(Canvas& canvas, Camera camera, rprimitives::Texture atlas, std::vector<rprimitives::Hitable*> hitables);
 
     CUDA_HOSTDEV
     Canvas& get_canvas() {
@@ -79,6 +81,11 @@ public:
     CUDA_HOSTDEV
     Camera& get_camera() {
         return cam;
+    }
+
+    CUDA_HOSTDEV
+    rprimitives::Texture& get_atlas() {
+        return atlas;
     }
 };
 }

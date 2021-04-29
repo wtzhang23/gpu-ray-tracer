@@ -6,7 +6,7 @@ INCLUDE := include
 SDL_CMD = `sdl2-config --cflags --libs`
 OPT ?= -O0
 CUCC := nvcc
-CUFLAGS := -g -rdc=true ${SDL_CMD}
+CUFLAGS := -g -G -rdc=true ${SDL_CMD} -lpng
 
 EXT := .cc .cu .s
 EXT_FILTER := ${foreach ext, ${EXT}, %${ext}}
