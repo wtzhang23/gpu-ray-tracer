@@ -19,7 +19,7 @@ rprimitives::Isect cast_ray(renv::Scene& scene, rmath::Ray<float> r) {
     rprimitives::Hitable** hitables = scene.get_hitables();
     for (int i = 0; i < scene.n_hitables(); i++) {
         rprimitives::Hitable* h = hitables[i];
-        rprimitives::Isect cur_hit = h->hit(r);
+        rprimitives::Isect cur_hit = h->hit(r, scene);
         if (cur_hit.hit && (!best_hit.hit || best_hit.time > cur_hit.time)) {
             best_hit = cur_hit;
         }
@@ -28,10 +28,10 @@ rprimitives::Isect cast_ray(renv::Scene& scene, rmath::Ray<float> r) {
 }
 
 __global__
-void trace(renv::Scene scene) {
-    renv::Canvas& canvas = scene.get_canvas();
-    renv::Camera& cam = scene.get_camera();
-    rprimitives::Texture& atlas = scene.get_atlas();
+void trace(renv::Scene* scene) {
+    renv::Canvas& canvas = scene->get_canvas();
+    renv::Camera& cam = scene->get_camera();
+    rprimitives::Texture& atlas = scene->get_atlas();
     
     int x = blockDim.x * blockIdx.x + threadIdx.x;
     int y = blockDim.y * blockIdx.y + threadIdx.y;
@@ -43,7 +43,7 @@ void trace(renv::Scene scene) {
             rmath::Vec4<float> norm_col = get_color_from_texture(atlas, i, j);
             canvas.set_color(i, j, renv::Color(norm_col[0], norm_col[1], norm_col[2], norm_col[3]));
             rmath::Ray<float> r = cam.at(i, j);
-            rprimitives::Isect isect = cast_ray(scene, r);
+            rprimitives::Isect isect = cast_ray(*scene, r);
             if (isect.hit) {
                 canvas.set_color(i, j, renv::Color(1.0f, 1.0f, 1.0f, 1.0f));
             }
@@ -51,15 +51,15 @@ void trace(renv::Scene scene) {
     }
 }
 
-void update_scene(renv::Scene& scene) {
+void update_scene(renv::Scene* scene) {
     dim3 dimBlock(32, 32);
-    int grid_dim_x = scene.get_canvas().get_width() / 32;
-    int grid_dim_y = scene.get_canvas().get_height() / 32;
+    int grid_dim_x = scene->get_canvas().get_width() / 32;
+    int grid_dim_y = scene->get_canvas().get_height() / 32;
     dim3 dimGrid(grid_dim_x == 0 ? 1 : grid_dim_x, grid_dim_y == 0 ? 1 : grid_dim_y);
     trace<<<dimGrid, dimBlock>>>(scene);
     int rv = cudaDeviceSynchronize();
     assert(rv == 0);
-    renv::Canvas& canvas = scene.get_canvas();
+    renv::Canvas& canvas = scene->get_canvas();
 }
 
 std::vector<rmath::Vec3<float>> generate_normals(const std::vector<rmath::Vec3<float>>& vertices,
@@ -90,7 +90,6 @@ struct MeshConfig {
     rmath::Vec3<float>* mesh_pos;
     rmath::Quat<float>* mesh_rot;
     int n_meshes;
-    rprimitives::VertexBuffer buffer;
 };
 
 __global__
@@ -105,14 +104,14 @@ void build_meshes(MeshConfig* config) {
             rprimitives::TriInner inner = rprimitives::TriInner(config->indices[begin + j], config->mats[begin + j], config->shadings[begin + j]);
             triangles[j] = inner;
         }
-        rprimitives::Trimesh* mesh = new rprimitives::Trimesh(triangles, count, config->buffer);
+        rprimitives::Trimesh* mesh = new rprimitives::Trimesh(triangles, count);
         mesh->set_position(config->mesh_pos[i]);
         mesh->set_orientation(config->mesh_rot[i]);
         config->meshes[i] = mesh;
     } 
 }
 
-renv::Scene build_scene(int width, int height) {
+renv::Scene* build_scene(int width, int height) {
     renv::Canvas canvas{width, height};
     renv::Camera camera{M_PI / 4, 200.0f, canvas};
 
@@ -166,8 +165,7 @@ renv::Scene build_scene(int width, int height) {
                 dev_shadings, 
                 dev_mesh_pos,
                 dev_mesh_rot,
-                (int) counts.size(), 
-                buffer
+                (int) counts.size(),
             };
     MeshConfig* config_ptr;
     cudaMalloc(&config_ptr, sizeof(MeshConfig));
@@ -186,6 +184,11 @@ renv::Scene build_scene(int width, int height) {
         hitables.push_back(meshes[i]);
     }
     cudaFree(meshes);
-    return renv::Scene{canvas, camera, atlas, hitables};
+
+    renv::Scene local_scene = renv::Scene{canvas, camera, atlas, hitables, buffer};
+    renv::Scene* scene;
+    cudaMallocManaged(&scene, sizeof(renv::Scene));
+    cudaMemcpy(scene, &local_scene, sizeof(renv::Scene), cudaMemcpyDefault);
+    return scene;
 }
 }
