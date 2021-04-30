@@ -30,7 +30,7 @@ public:
     Quat(T i, T j, T k, T r): inner({i, j, k, r}) {}
 
     CUDA_HOSTDEV
-    Quat(Vec3<T> inner): Quat(0, inner[0], inner[1], inner[2]) {}
+    Quat(Vec3<T> inner): Quat(inner[0], inner[1], inner[2], 0) {}
     
     CUDA_HOSTDEV
     Quat(Vec3<T> axis, T theta) {

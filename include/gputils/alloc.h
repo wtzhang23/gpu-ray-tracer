@@ -11,6 +11,14 @@
 
 namespace gputils {
 
+template<typename T>
+T* copy_to_gpu(T* cpu, int n) {
+    T* rv;
+    cudaMalloc(&rv, sizeof(T) * n);
+    cudaMemcpy(rv, cpu, sizeof(T) * n, cudaMemcpyHostToDevice);
+    return rv;
+}
+
 template<typename T, int Dim = 1>
 class TextureBuffer {
 private:

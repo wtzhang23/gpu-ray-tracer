@@ -159,7 +159,11 @@ public:
     CUDA_HOSTDEV
     Vec<T, Dim> normalized() const {
         T len = this->len();
-        return (1 / len) * *this;
+        if (len > THRESHOLD) {
+            return (1 / len) * *this;
+        } else {
+            return Vec<T, Dim>();
+        }
     }
 
     CUDA_HOSTDEV

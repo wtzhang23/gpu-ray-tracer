@@ -1,44 +1,15 @@
 #include <iostream>
 #include <SDL2/SDL.h>
-#include <memory>
-#include <vector>
 #include <thread>
-#include <string>
-#include <cstdio>
 #include <atomic>
-#include <cmath>
-#include <cuda.h>
-#include <png.h>
-#include "assets.h"
 #include "raytracer.h"
-#include "raymath/linear.h"
 #include "rayenv/canvas.h"
-#include "rayenv/scene.h"
-#include "raymath/geometry.h"
-#include "rayprimitives/entity.h"
-#include "rayprimitives/trimesh.h"
 
 static const int WIDTH = 640;
 static const int HEIGHT = 480;
-static const char* ATLAS_PATH = "assets/sus.png";
 
 int main(int argc, const char** argv) {
-    renv::Canvas canvas{WIDTH, HEIGHT};
-    renv::Camera camera{M_PI / 4, canvas};
-
-    // load assets
-    gputils::TextureBuffer4D<float> atlas = assets::read_png(ATLAS_PATH);
-
-    // build hitables
-    std::vector<rmath::Vec3<float>> vertices;
-    std::vector<rmath::Vec3<float>> normals;
-
-    std::vector<rprimitives::Hitable*> hitables;
-    renv::Scene scene{canvas, camera, atlas, hitables};
-    int rmask = renv::Color::rmask();
-    int gmask = renv::Color::gmask();
-    int bmask = renv::Color::bmask();
-    int amask = renv::Color::amask();
+    renv::Scene scene = rtracer::build_scene(WIDTH, HEIGHT);
     
     // initialize window
     SDL_Init(SDL_INIT_VIDEO);
@@ -61,7 +32,7 @@ int main(int argc, const char** argv) {
                                                             WIDTH, HEIGHT, SDL_WINDOW_RESIZABLE);
     SDL_Surface* screen = SDL_GetWindowSurface(window);
     SDL_Surface* surface = NULL;
-    canvas.get_surface(&surface);
+    scene.get_canvas().get_surface(&surface); // link scene near plane to screen
     assert(surface != NULL);
     while (running->load()) {
         rtracer::update_scene(scene);
