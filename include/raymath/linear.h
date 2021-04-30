@@ -207,8 +207,6 @@ Vec<T, 3> cross(const Vec<T, 3>& first, const Vec<T, 3>& second) {
     float y = first[2] * second[0] - first[0] * second[2];
     float z = first[0] * second[1] - first[1] * second[0];
     Vec<T, 3> output = Vec<T, 3>({x, y, z});
-    assert(abs(dot(first, output)) <= THRESHOLD);
-    assert(abs(dot(second, output)) <= THRESHOLD);
     return output;
 }
 

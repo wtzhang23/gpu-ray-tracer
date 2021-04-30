@@ -138,7 +138,7 @@ renv::Scene build_scene(int width, int height) {
     std::vector<int> counts;
     std::vector<rprimitives::Shade> shadings;
     std::vector<rprimitives::Material> mats;
-    init_trimesh_pos.push_back(rmath::Vec3<float>({0.0f, 0.0f, -5.0f}));
+    init_trimesh_pos.push_back(rmath::Vec3<float>({0.0f, 0.0f, 5.0f}));
     init_trimesh_rot.push_back(rmath::Quat<float>::identity());
     counts.push_back(1);
     shadings.push_back(rprimitives::Shade(rmath::Vec4<float>{1.0f, 1.0f, 1.0f, 1.0f}));
