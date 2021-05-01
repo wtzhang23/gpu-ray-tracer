@@ -210,6 +210,9 @@ private:
     Vec3<T> d;
 public:
     CUDA_HOSTDEV
+    Ray(): o(), d() {}
+
+    CUDA_HOSTDEV
     Ray(Vec3<T> origin, Vec3<T> direction): o(origin), d(direction.normalized()) {}
 
     CUDA_HOSTDEV

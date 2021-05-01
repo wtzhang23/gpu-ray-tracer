@@ -10,8 +10,7 @@ rmath::Vec4<float> Light::attenuate(const rmath::Ray<float>& to_light, float max
     rmath::Ray<float> cur_shadow = rmath::Ray<float>(to_light.at(rmath::THRESHOLD), to_light.direction());
     while (true) {
         rprimitives::Isect shadow_isect{};
-        renv::cast_ray(scene, cur_shadow, shadow_isect);
-        if (shadow_isect.hit) {
+        if (renv::cast_ray(scene, cur_shadow, shadow_isect)) {
             if (shadow_isect.time > max_t) {
                 return rv;
             }

@@ -4,7 +4,10 @@
 #include "rayprimitives/hitable.cuh"
 namespace renv {
 __device__
-void cast_ray(Scene* scene, rmath::Ray<float> r, rprimitives::Isect& isect);
+bool cast_ray(Scene* scene, rmath::Ray<float> r, rprimitives::Isect& isect);
+
+__device__
+rmath::Vec4<float> propagate_ray(Scene* scene, rmath::Ray<float> r);
 }
 
 #endif

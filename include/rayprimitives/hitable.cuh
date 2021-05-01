@@ -31,7 +31,6 @@ struct Shade {
 };
 
 struct Isect {
-    bool hit;
     float time;
     rmath::Vec3<float> norm;
     Shade* shading;
@@ -39,7 +38,7 @@ struct Isect {
     Material* mat;
 
     __device__
-    Isect(): hit(false) {}
+    Isect(): time(INFINITY){}
 };
 
 class Hitable: public Entity {

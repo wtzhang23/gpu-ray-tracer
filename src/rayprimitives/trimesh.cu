@@ -37,14 +37,13 @@ bool TriInner::tri_hit(const rmath::Ray<float>& local_ray, renv::Scene* scene, I
     rmath::Plane<float> plane = rmath::Plane<float>(a, plane_norm);
     
     float time;
-    if (plane.hit(local_ray, time) && time >= 0 && (!isect.hit || time < isect.time)) {
+    if (plane.hit(local_ray, time) && time >= 0 && time < isect.time) {
         rmath::Vec3<float> isect_pt = local_ray.at(time);
         float tri_area = plane_norm.len();
         float bary0 = rmath::cross(c - isect_pt, b - isect_pt).len() / tri_area;
         float bary1 = rmath::cross(c - isect_pt, a - isect_pt).len() / tri_area;
         float bary2 = rmath::cross(a - isect_pt, b - isect_pt).len() / tri_area;
         if (abs(bary0 + bary1 + bary2 - 1.0f) <= rmath::THRESHOLD) {
-            isect.hit = true;
             isect.mat = &mat;
             isect.shading = &shading;
             isect.uv = rmath::Vec<float, 2>({bary1, bary2});

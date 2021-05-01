@@ -33,15 +33,11 @@ void trace(renv::Scene* scene) {
             rmath::Vec4<float> norm_col = get_color_from_texture(atlas, i, j);
             canvas.set_color(i, j, renv::Color(norm_col[0], norm_col[1], norm_col[2], norm_col[3]));
             rmath::Ray<float> r = cam.at(i, j);
-            rprimitives::Isect isect{};
-            renv::cast_ray(scene, r, isect);
-            if (isect.hit) {
-                rmath::Vec4<float> c = rprimitives::illuminate(r, isect, scene);
-                canvas.set_color(i, j, renv::Color(c[0] > 1.0f ? 1.0f : c[0], 
-                                                   c[1] > 1.0f ? 1.0f : c[1], 
-                                                   c[2] > 1.0f ? 1.0f : c[2], 
-                                                   c[3] > 1.0f ? 1.0f : c[3]));
-            }
+            rmath::Vec4<float> c = renv::propagate_ray(scene, r);
+            canvas.set_color(i, j, renv::Color(c[0] > 1.0f ? 1.0f : c[0], 
+                                            c[1] > 1.0f ? 1.0f : c[1], 
+                                            c[2] > 1.0f ? 1.0f : c[2], 
+                                            c[3] > 1.0f ? 1.0f : c[3]));
         }
     }
 }
@@ -173,8 +169,8 @@ renv::Scene* build_scene(int width, int height) {
         rmath::Vec4<float>(),
         rmath::Vec4<float>({1.0f, 0.0f, 0.0f, 1.0f}),
         rmath::Vec4<float>({1.0f, 1.0f, 1.0f, 1.0f}),
-        rmath::Vec4<float>(),
-        rmath::Vec4<float>(),
+        rmath::Vec4<float>({1.0f, 1.0f, 1.0f, 1.0f}),
+        rmath::Vec4<float>({1.0f, 1.0f, 1.0f, 1.0f}),
         10.0f,
         0.0f
     ));
@@ -252,6 +248,7 @@ renv::Scene* build_scene(int width, int height) {
     // configure local scene
     renv::Scene local_scene = renv::Scene{canvas, camera, atlas, hitables, n_hitables, lights, n_lights, buffer};
     local_scene.set_ambience(rmath::Vec4<float>({1.0f, 1.0f, 1.0f, 1.0f}));
+    local_scene.set_recurse_depth(5);
 
     renv::Scene* scene;
     cudaMallocManaged(&scene, sizeof(renv::Scene));

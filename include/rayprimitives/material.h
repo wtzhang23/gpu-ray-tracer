@@ -55,6 +55,11 @@ public:
     }
 
     CUDA_HOSTDEV
+    const rmath::Vec4<float>& get_Kr() const {
+        return Kr;
+    }
+
+    CUDA_HOSTDEV
     float get_alpha() const {
         return alpha;
     }
