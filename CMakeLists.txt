@@ -11,4 +11,5 @@ set_target_properties(RayTracer PROPERTIES POSITION_INDEPENDENT_CODE ON)
 # dependencies
 find_package(PNG REQUIRED)
 find_package(SDL2 REQUIRED)
-target_link_libraries(RayTracer ${PNG_LIBRARIES} ${SDL2_LIBRARIES})
+find_package(RapidJSON REQUIRED)
+target_link_libraries(RayTracer ${PNG_LIBRARIES} ${SDL2_LIBRARIES} ${RAPIDJSON_LIBRARIES})

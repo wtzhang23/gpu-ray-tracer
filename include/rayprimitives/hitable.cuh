@@ -8,28 +8,6 @@
 #include "rayenv/scene.h"
 
 namespace rprimitives {
-struct Shade {
-    union Data {
-        struct TextData {
-            int texture_x;
-            int texture_y;
-            int texture_width;
-            int texture_height;
-        } text_data;
-        rmath::Vec4<float> col;
-        __host__ __device__
-        Data(rmath::Vec4<float> col): col(col) {}
-        __host__ __device__
-        Data(int texture_x, int texture_y, int texture_width, int texture_height): text_data{texture_x, texture_y, texture_width, texture_height}{}
-    } data;
-    bool use_texture;
-    __host__ __device__
-    Shade(rmath::Vec4<float> col): data(col), use_texture(false) {}
-    __host__ __device__
-    Shade(int texture_x, int texture_y, int texture_width, int texture_height): data(texture_x, texture_y, texture_width, texture_height),
-                            use_texture(true) {}
-};
-
 struct Isect {
     float time;
     rmath::Vec3<float> norm;

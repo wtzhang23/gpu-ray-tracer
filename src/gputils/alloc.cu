@@ -3,9 +3,11 @@
 
 namespace gputils {
 void* create_buffer(const int n_data, const int data_size) {
-    void* buffer;
-    auto rv = cudaMallocManaged(&buffer, data_size * n_data);
-    assert(rv == 0);
+    void* buffer = NULL;
+    if (n_data > 0) {
+        auto rv = cudaMallocManaged(&buffer, data_size * n_data);
+        assert(rv == 0);
+    }
     return buffer;
 }
 

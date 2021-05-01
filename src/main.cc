@@ -7,14 +7,27 @@
 #include "rayenv/canvas.h"
 #include "raymath/geometry.h"
 #include "raymath/linear.h"
+#include "rayenv/scene.h"
+#include "scene_builder.h"
 
 static const int WIDTH = 640;
 static const int HEIGHT = 480;
 static const float MOVE_SPEED = 0.2f;
 static const float ROT_SPEED = 0.01f;
+static const char* ATLAS_PATH = "../assets/sus.png";
 
 int main(int argc, const char** argv) {
-    renv::Scene* scene = rtracer::build_scene(WIDTH, HEIGHT);
+    // build scene
+    renv::Canvas canvas{WIDTH, HEIGHT};
+    renv::Camera cam{M_PI / 4, 200, canvas};
+    rtracer::SceneBuilder scene_builder{std::string(ATLAS_PATH)};
+    scene_builder.build_cube(1.0f, 
+                rmath::Vec3<float>({0.0f, 0.0f, 5.0f}),
+                rmath::Quat<float>::identity(),
+                rprimitives::Shade(rmath::Vec4<float>({0.0f, 1.0f, 0.0f, 1.0f})),
+                rprimitives::Material()
+    );
+    renv::Scene* scene = scene_builder.build_scene(canvas, cam);
     std::cout << "Loaded scene" << std::endl;
     // initialize window
     SDL_Init(SDL_INIT_VIDEO);

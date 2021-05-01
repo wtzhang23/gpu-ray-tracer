@@ -3,6 +3,7 @@
 
 #include "raymath/linear.h"
 #include "rayprimitives/texture.h"
+#include <iostream>
 
 #ifdef __CUDACC__
 #define CUDA_HOSTDEV __host__ __device__
@@ -27,7 +28,7 @@ public:
                 float alpha, float eta): Ke(Ke), Ka(Ka), Kd(Kd), Ks(Ks), Kt(Kt), Kr(Kr), alpha(alpha), eta(eta){}
     
     CUDA_HOSTDEV
-    Material(): Ke(rmath::Vec4<float>({1.0f, 1.0f, 1.0f})), Ka(), Kd(), Ks(), Kt(), Kr(), alpha(0), eta(1){}
+    Material(): Ke(rmath::Vec4<float>({1.0f, 1.0f, 1.0f, 1.0f})), Ka(), Kd(), Ks(), Kt(), Kr(), alpha(0), eta(1){}
 
     CUDA_HOSTDEV
     const rmath::Vec4<float>& get_Ke() const {
@@ -68,6 +69,8 @@ public:
     float get_eta() const {
         return eta;
     }
+
+    friend std::ostream& operator<<(std::ostream& os, const Material& mat);
 };
 }
 
