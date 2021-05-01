@@ -12,7 +12,7 @@
 #include <iostream>
 #include <initializer_list>
 namespace rmath {
-constexpr double THRESHOLD = 1E-6f;
+constexpr double THRESHOLD = 1E-5f;
 template <typename T, int Dim>
 class Vec;
 

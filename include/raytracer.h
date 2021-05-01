@@ -5,6 +5,7 @@
 
 namespace rtracer {
     void update_scene(renv::Scene* scene);
+    void debug_cast(renv::Scene* scene, int x, int y);
 }
 
 #endif

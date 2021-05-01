@@ -47,9 +47,8 @@ rmath::Vec4<float> propagate_ray(Scene* scene, rmath::Ray<float> r) {
         RayFrame& top = frames[stack_top];
         switch (top.type) {
             case FrameType::NORMAL: {
-                rmath::Ray<float> to_cast{top.ray.at(rmath::THRESHOLD), top.ray.direction()};
-                if (cast_ray(scene, to_cast, isect)) {
-                    acc_col += top.atten * rprimitives::illuminate(to_cast, isect, scene);
+                if (cast_ray(scene, top.ray, isect)) {
+                    acc_col += top.atten * rprimitives::illuminate(top.ray, isect, scene);
                     if (top.depth > 0) {
                         if (top.in_obj) {
                             rmath::Vec4<float> kt = top.last_mat->get_Kt();
@@ -60,7 +59,7 @@ rmath::Vec4<float> propagate_ray(Scene* scene, rmath::Ray<float> r) {
                             top.atten *= rmath::Vec4<float>({ar, ag, ab, aa});
                         }
                         frames[stack_top].type = FrameType::REFLECT;
-                        frames[stack_top].hit_pt = to_cast.at(isect.time);
+                        frames[stack_top].hit_pt = top.ray.at(isect.time);
                         frames[stack_top].last_mat = isect.mat;
                         top.norm = isect.norm;
                     } else {

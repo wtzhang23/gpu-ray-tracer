@@ -37,7 +37,7 @@ bool TriInner::tri_hit(const rmath::Ray<float>& local_ray, renv::Scene* scene, I
     rmath::Plane<float> plane = rmath::Plane<float>(a, plane_norm);
     
     float time;
-    if (plane.hit(local_ray, time) && time >= 0 && time < isect.time) {
+    if (plane.hit(local_ray, time) && time >= rmath::THRESHOLD && time < isect.time) {
         rmath::Vec3<float> isect_pt = local_ray.at(time);
         float tri_area = plane_norm.len();
         float bary0 = rmath::cross(c - isect_pt, b - isect_pt).len() / tri_area;

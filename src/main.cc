@@ -14,7 +14,7 @@ static const int WIDTH = 640;
 static const int HEIGHT = 480;
 static const float MOVE_SPEED = 0.2f;
 static const float ROT_SPEED = 0.01f;
-static const char* ATLAS_PATH = "../assets/sus.png";
+static const char* ATLAS_PATH = "./assets/sus.png";
 
 int main(int argc, const char** argv) {
     // build scene
@@ -111,6 +111,13 @@ int main(int argc, const char** argv) {
                         rmath::Vec3<float> axis = rmath::cross(global_mot, cam.forward().direction()).normalized();
                         rmath::Quat<float> rot = rmath::Quat<float>(axis, -ROT_SPEED);
                         cam.rotate(rot);
+                    }
+                    break;
+                }
+                case SDL_MOUSEBUTTONDOWN: {
+                    if (!mouse_trapped && event.button.button == SDL_BUTTON_LEFT) {
+                        std::cout << "shooting debug ray at " << event.button.x << ", " << event.button.y << std::endl;
+                        rtracer::debug_cast(scene, event.button.x, event.button.y);
                     }
                     break;
                 }

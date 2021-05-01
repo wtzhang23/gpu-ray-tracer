@@ -80,6 +80,7 @@ private:
     int nh;
     int nl;
     int recurse_depth;
+    bool debugging;
 public:
     Scene(Canvas canvas, Camera camera, rprimitives::Texture atlas, 
                 rprimitives::Hitable** hitables, int n_hitables, 
@@ -87,7 +88,7 @@ public:
                 rprimitives::VertexBuffer buffer): canvas(canvas), cam(camera),
                 atlas(atlas), hitables(hitables), lights(lights), 
                 dist_atten(), ambience(), buffer(buffer),
-                nh(n_hitables), nl(n_lights), recurse_depth(0){}
+                nh(n_hitables), nl(n_lights), recurse_depth(0), debugging(false) {}
 
     void set_dist_atten(float const_term, float linear_term, float quad_term) {
         dist_atten = rmath::Vec3<float>({const_term, linear_term, quad_term});
@@ -99,6 +100,15 @@ public:
 
     void set_recurse_depth(int depth) {
         recurse_depth = depth;
+    }
+
+    void set_debug_mode(bool mode) {
+        debugging = mode;
+    }
+
+    CUDA_HOSTDEV
+    bool is_debugging() const {
+        return debugging;
     }
 
     CUDA_HOSTDEV

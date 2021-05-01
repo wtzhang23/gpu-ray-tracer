@@ -34,6 +34,20 @@ void trace(renv::Scene* scene) {
     }
 }
 
+__global__
+void debug(renv::Scene* scene, int x, int y) {
+    renv::Camera& cam = scene->get_camera();
+    rmath::Ray<float> r = cam.at(x, y);
+    rmath::Vec4<float> c = renv::propagate_ray(scene, r);
+}
+
+void debug_cast(renv::Scene* scene, int x, int y) {
+    scene->set_debug_mode(true);
+    debug<<<1, 1>>>(scene, x, y);
+    cudaDeviceSynchronize();
+    scene->set_debug_mode(false);
+}
+
 void update_scene(renv::Scene* scene) {
     dim3 dimBlock(SQ_WIDTH, SQ_WIDTH);
     int grid_dim_x = scene->get_canvas().get_width() / SQ_WIDTH;
