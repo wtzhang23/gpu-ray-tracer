@@ -1,0 +1,7 @@
+UNSET(src PARENT_SCOPE)
+UNSET(src)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR} src)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/gputils src)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/rayenv src)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/rayprimitives src)
+set(src ${src} PARENT_SCOPE)

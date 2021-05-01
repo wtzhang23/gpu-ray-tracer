@@ -14,7 +14,7 @@
 #include "assets.h"
 
 namespace rtracer {
-static const char* ATLAS_PATH = "assets/sus.png";
+static const char* ATLAS_PATH = "../assets/sus.png";
 static const int SQ_WIDTH = 16;
 
 __global__
@@ -30,8 +30,6 @@ void trace(renv::Scene* scene) {
 
     for (int i = x; i < canvas.get_width(); i += stride_x) {
         for (int j = y; j < canvas.get_height(); j += stride_y) {
-            rmath::Vec4<float> norm_col = get_color_from_texture(atlas, i, j);
-            canvas.set_color(i, j, renv::Color(norm_col[0], norm_col[1], norm_col[2], norm_col[3]));
             rmath::Ray<float> r = cam.at(i, j);
             rmath::Vec4<float> c = renv::propagate_ray(scene, r);
             canvas.set_color(i, j, renv::Color(c[0] > 1.0f ? 1.0f : c[0], 

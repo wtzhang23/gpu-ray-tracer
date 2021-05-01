@@ -188,7 +188,7 @@ public:
         T nk = k() / length;
         T nr = r() / length;
 
-        T ii = 2.0f * ni * ni, jj = 2.0f * nj * nj, kk = 2.0f * nk * nk, rr = 2.0f * nr * nr;
+        T ii = 2.0f * ni * ni, jj = 2.0f * nj * nj, kk = 2.0f * nk * nk;
         T ri = 2.0f * nr * ni, rj = 2.0f * nr * nj, rk = 2.0f * nr * nk, ij = 2.0f * ni * nj, 
                ik = 2.0f * ni * nk, jk = 2.0f * nj * nk;
         T inner[3][3] = {{1 - (jj + kk), ij - rk, ik + rj},
