@@ -21,12 +21,22 @@ int main(int argc, const char** argv) {
     renv::Canvas canvas{WIDTH, HEIGHT};
     renv::Camera cam{M_PI / 4, 200, canvas};
     rtracer::SceneBuilder scene_builder{std::string(ATLAS_PATH)};
+    rprimitives::Material mat{};
+    mat.set_Ke({0.0f, 0.0f, 0.0f, 1.0f});
+    mat.set_Kd({1.0f, 0.0f, 0.0f, 1.0f});
+    mat.set_Ka({0.2f, 0.2f, 0.2f, 1.0f});
+    mat.set_Ks({1.0f, 1.0f, 1.0f, 1.0f});
+    mat.set_Kt({0.2f, 0.2f, 0.2f, 1.0f});
+    mat.set_alpha(.8f);
     scene_builder.build_cube(1.0f, 
                 rmath::Vec3<float>({0.0f, 0.0f, 5.0f}),
                 rmath::Quat<float>::identity(),
                 rprimitives::Shade(rmath::Vec4<float>({0.0f, 1.0f, 0.0f, 1.0f})),
-                rprimitives::Material()
+                mat
     );
+    scene_builder.add_directional_light({0.0f, -1.0f, -1.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
+    scene_builder.set_ambience({0.0f, 0.0f, 1.0f, 1.0f});
+    scene_builder.set_recurse_depth(1);
     renv::Scene* scene = scene_builder.build_scene(canvas, cam);
     std::cout << "Loaded scene" << std::endl;
     // initialize window

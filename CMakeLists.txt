@@ -8,6 +8,9 @@ target_include_directories(RayTracer PUBLIC include)
 set_target_properties(RayTracer PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 set_target_properties(RayTracer PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
+# flags
+set(CUDA_NVCC_FLAGS "-g -G")
+
 # dependencies
 find_package(PNG REQUIRED)
 find_package(SDL2 REQUIRED)

@@ -212,25 +212,35 @@ void SceneBuilder::build_cube(float scale, rmath::Vec3<float> pos, rmath::Quat<f
     rmath::Vec3<float> h = scale * _h;
 
     MeshBuilder& builder = create_mesh(pos, rot);
-    builder.add_triangle(rmath::Vec3<int>{add_vertex(a), add_vertex(b), add_vertex(d)},
+    // front
+    builder.add_triangle(rmath::Vec3<int>{add_vertex(d), add_vertex(a), add_vertex(b)},
                             shade, mat);
-    builder.add_triangle(rmath::Vec3<int>{add_vertex(c), add_vertex(d), add_vertex(a)},
+    builder.add_triangle(rmath::Vec3<int>{add_vertex(c), add_vertex(a), add_vertex(d)},
                             shade, mat);
-    builder.add_triangle(rmath::Vec3<int>{add_vertex(a), add_vertex(b), add_vertex(e)},
+    // top
+    builder.add_triangle(rmath::Vec3<int>{add_vertex(a), add_vertex(e), add_vertex(b)},
                             shade, mat);
     builder.add_triangle(rmath::Vec3<int>{add_vertex(e), add_vertex(f), add_vertex(b)},
                             shade, mat);
-    builder.add_triangle(rmath::Vec3<int>{add_vertex(d), add_vertex(h), add_vertex(b)},
+    // right
+    builder.add_triangle(rmath::Vec3<int>{add_vertex(d), add_vertex(b), add_vertex(h)},
                             shade, mat);
     builder.add_triangle(rmath::Vec3<int>{add_vertex(b), add_vertex(f), add_vertex(h)},
                             shade, mat);
+    // left
     builder.add_triangle(rmath::Vec3<int>{add_vertex(c), add_vertex(g), add_vertex(a)},
                             shade, mat);
-    builder.add_triangle(rmath::Vec3<int>{add_vertex(a), add_vertex(e), add_vertex(g)},
+    builder.add_triangle(rmath::Vec3<int>{add_vertex(a), add_vertex(g), add_vertex(e)},
                             shade, mat);
+    // back
     builder.add_triangle(rmath::Vec3<int>{add_vertex(g), add_vertex(h), add_vertex(e)},
                             shade, mat);
-    builder.add_triangle(rmath::Vec3<int>{add_vertex(e), add_vertex(f), add_vertex(h)},
+    builder.add_triangle(rmath::Vec3<int>{add_vertex(e), add_vertex(h), add_vertex(f)},
+                            shade, mat);
+    // bottom
+    builder.add_triangle(rmath::Vec3<int>{add_vertex(g), add_vertex(c), add_vertex(d)},
+                            shade, mat);
+    builder.add_triangle(rmath::Vec3<int>{add_vertex(d), add_vertex(h), add_vertex(g)},
                             shade, mat);
 }
 

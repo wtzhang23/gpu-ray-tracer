@@ -14,12 +14,12 @@ rmath::Vec4<float> illuminate(const rmath::Ray<float>& org_ray, const Isect& ise
         rmath::Vec4<float> incoming_light = light->shine(org_ray.at(isect.time), dir_to_light, s);
         
         // diffuse component
-        float norm_dot = abs(rmath::dot(dir_to_light, isect.norm));
+        float norm_dot = max(rmath::dot(dir_to_light, isect.norm), 0.0f);
         rmath::Vec4<float> diffuse = norm_dot * isect.mat->get_Kd();
         
         // specular component
-        rmath::Vec3<float> reflected = -rmath::reflect(-dir_to_light, isect.norm);
-        float reflect_dot = rmath::dot(reflected, org_ray.direction());
+        rmath::Vec3<float> reflected = rmath::reflect(-dir_to_light, isect.norm);
+        float reflect_dot = rmath::dot(-reflected, org_ray.direction());
         rmath::Vec4<float> specular = pow(max(reflect_dot, 0.0f), isect.mat->get_alpha()) * isect.mat->get_Ks();
         summed_colors += (diffuse + specular) * incoming_light;
     }

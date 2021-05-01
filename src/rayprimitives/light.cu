@@ -5,7 +5,6 @@
 namespace rprimitives {
 __device__
 rmath::Vec4<float> Light::attenuate(const rmath::Ray<float>& to_light, float max_t, renv::Scene* scene) const {
-    bool in_obj = false;
     rmath::Vec4<float> rv = color;
     rmath::Ray<float> cur_shadow = rmath::Ray<float>(to_light.at(rmath::THRESHOLD), to_light.direction());
     while (true) {
@@ -15,7 +14,8 @@ rmath::Vec4<float> Light::attenuate(const rmath::Ray<float>& to_light, float max
                 return rv;
             }
 
-            if (in_obj) {
+            // norm and shadow ray in same direction implies on inside of object
+            if (rmath::dot(shadow_isect.norm, cur_shadow.direction()) > 0) {
                 const rmath::Vec4<float>& kt = shadow_isect.mat->get_Kt();
                 float atten_r = pow(kt[0], shadow_isect.time);
                 float atten_g = pow(kt[1], shadow_isect.time);
@@ -23,7 +23,6 @@ rmath::Vec4<float> Light::attenuate(const rmath::Ray<float>& to_light, float max
                 float atten_a = pow(kt[3], shadow_isect.time);
                 rv *= rmath::Vec4<float>({atten_r, atten_g, atten_b, atten_a});
             }
-            in_obj = !in_obj;
             cur_shadow = rmath::Ray<float>(cur_shadow.at(shadow_isect.time + rmath::THRESHOLD), cur_shadow.direction());
         } else {
             return rv;

@@ -28,7 +28,39 @@ public:
                 float alpha, float eta): Ke(Ke), Ka(Ka), Kd(Kd), Ks(Ks), Kt(Kt), Kr(Kr), alpha(alpha), eta(eta){}
     
     CUDA_HOSTDEV
-    Material(): Ke(rmath::Vec4<float>({1.0f, 1.0f, 1.0f, 1.0f})), Ka(), Kd(), Ks(), Kt(), Kr(), alpha(0), eta(1){}
+    Material(): Ke(rmath::Vec4<float>()), Ka(), Kd(), Ks(), Kt(), Kr(), alpha(0), eta(1){}
+
+    void set_Ke(rmath::Vec4<float> Ke) {
+        this->Ke = Ke;
+    }
+
+    void set_Ka(rmath::Vec4<float> Ka) {
+        this->Ka = Ka;
+    }
+
+    void set_Kd(rmath::Vec4<float> Kd) {
+        this->Kd = Kd;
+    }
+
+    void set_Ks(rmath::Vec4<float> Ks) {
+        this->Ks = Ks;
+    }
+
+    void set_Kt(rmath::Vec4<float> Kt) {
+        this->Kt = Kt;
+    }
+
+    void set_Kr(rmath::Vec4<float> Kr) {
+        this->Kr = Kr;
+    }
+
+    void set_alpha(float alpha) {
+        this->alpha = alpha;
+    }
+
+    void set_eta(float eta) {
+        this->eta = eta;
+    }
 
     CUDA_HOSTDEV
     const rmath::Vec4<float>& get_Ke() const {

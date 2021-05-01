@@ -51,6 +51,7 @@ bool TriInner::tri_hit(const rmath::Ray<float>& local_ray, renv::Scene* scene, I
             rmath::Vec3<float> n1 = get_normal(1, scene->get_vertex_buffer());
             rmath::Vec3<float> n2 = get_normal(2, scene->get_vertex_buffer());
             isect.norm = (bary0 * n0 + bary1 * n1 + bary2 * n2).normalized();
+            isect.time = time;
             return true;
         }
     }
