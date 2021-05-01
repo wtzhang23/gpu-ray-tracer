@@ -8,18 +8,35 @@
 #include "rayenv/scene.h"
 
 namespace rprimitives {
+struct Shade {
+    union Data {
+        struct TextData {
+            int texture_x;
+            int texture_y;
+            int texture_width;
+            int texture_height;
+        } text_data;
+        rmath::Vec4<float> col;
+        __host__ __device__
+        Data(rmath::Vec4<float> col): col(col) {}
+        __host__ __device__
+        Data(int texture_x, int texture_y, int texture_width, int texture_height): text_data{texture_x, texture_y, texture_width, texture_height}{}
+    } data;
+    bool use_texture;
+    __host__ __device__
+    Shade(rmath::Vec4<float> col): data(col), use_texture(false) {}
+    __host__ __device__
+    Shade(int texture_x, int texture_y, int texture_width, int texture_height): data(texture_x, texture_y, texture_width, texture_height),
+                            use_texture(true) {}
+};
+
 struct Isect {
     bool hit;
-    bool use_texture;
     float time;
     rmath::Vec3<float> norm;
-    union Shade {
-        rmath::Vec<float, 2> text_coords;
-        rmath::Vec4<float> color;
-        __device__
-        Shade(){}
-    } shading;
-    Material mat;
+    Shade* shading;
+    rmath::Vec<float, 2> uv;
+    Material* mat;
 
     __device__
     Isect(): hit(false) {}
@@ -40,16 +57,22 @@ public:
     virtual ~Hitable() {}
     
     __device__
-    virtual Isect hit_local(const rmath::Ray<float>& local_ray, renv::Scene& scene) {
-        return Isect{};
+    virtual bool hit_local(const rmath::Ray<float>& local_ray, renv::Scene* scene, Isect& isect) {
+        isect = Isect{};
+        return false;
     };
     
     __device__
-    Isect hit(const rmath::Ray<float>& ray, renv::Scene& scene) {
-        rmath::Ray<float> local_ray = rmath::Ray<float>(point_to_local(ray.origin()), vec_to_local(ray.direction()));
-        Isect local_isect = hit_local(local_ray, scene);
-        local_isect.norm = vec_from_local(local_isect.norm);
-        return local_isect;
+    bool hit(const rmath::Ray<float>& ray, renv::Scene* scene, Isect& isect) {
+        rmath::Vec3<float> local_dir = vec_to_local(ray.direction());
+        float dir_len = local_dir.len();
+        rmath::Ray<float> local_ray = rmath::Ray<float>(point_to_local(ray.origin()), local_dir);
+        if (hit_local(local_ray, scene, isect)) {
+            isect.norm = vec_from_local(isect.norm);
+            isect.time *= dir_len; // account for scaling
+            return true;
+        }
+        return false;
     }
 };
 }

@@ -13,22 +13,56 @@
 namespace rprimitives {
 class Material {
 private:
-    rmath::Vec3<float> Ke;
-    rmath::Vec3<float> Kd;
-    rmath::Vec3<float> Ks;    
-    rmath::Vec3<float> Kt;
-    rmath::Vec3<float> Kr;
+    rmath::Vec4<float> Ke;
+    rmath::Vec4<float> Ka;
+    rmath::Vec4<float> Kd;
+    rmath::Vec4<float> Ks;    
+    rmath::Vec4<float> Kt;
+    rmath::Vec4<float> Kr;
     float alpha;
     float eta;
 public:
     CUDA_HOSTDEV
-    Material(rmath::Vec3<float> Ke, rmath::Vec3<float> Kd, rmath::Vec3<float> Ks, rmath::Vec3<float> Kt, rmath::Vec3<float> Kr,
-                float alpha, float eta): Ke(Ke), Kd(Kd), Ks(Ks), Kt(Kt), Kr(Kr), alpha(alpha), eta(eta){}
+    Material(rmath::Vec4<float> Ke, rmath::Vec4<float> Ka, rmath::Vec4<float> Kd, rmath::Vec4<float> Ks, rmath::Vec4<float> Kt, rmath::Vec4<float> Kr,
+                float alpha, float eta): Ke(Ke), Ka(Ka), Kd(Kd), Ks(Ks), Kt(Kt), Kr(Kr), alpha(alpha), eta(eta){}
     
     CUDA_HOSTDEV
-    Material(): Material(rmath::Vec3<float>({1.0f, 1.0f, 1.0f}), rmath::Vec3<float>(), rmath::Vec3<float>(),
-                rmath::Vec3<float>(), rmath::Vec3<float>(), 0, 0){}
+    Material(): Ke(rmath::Vec4<float>({1.0f, 1.0f, 1.0f})), Ka(), Kd(), Ks(), Kt(), Kr(), alpha(0), eta(1){}
 
+    CUDA_HOSTDEV
+    const rmath::Vec4<float>& get_Ke() const {
+        return Ke;
+    }
+
+    CUDA_HOSTDEV
+    const rmath::Vec4<float>& get_Ka() const {
+        return Ka;
+    }
+
+    CUDA_HOSTDEV
+    const rmath::Vec4<float>& get_Kd() const {
+        return Kd;
+    }
+
+    CUDA_HOSTDEV
+    const rmath::Vec4<float>& get_Ks() const {
+        return Ks;
+    }
+
+    CUDA_HOSTDEV
+    const rmath::Vec4<float>& get_Kt() const {
+        return Kt;
+    }
+
+    CUDA_HOSTDEV
+    float get_alpha() const {
+        return alpha;
+    }
+
+    CUDA_HOSTDEV
+    float get_eta() const {
+        return eta;
+    }
 };
 }
 

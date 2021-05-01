@@ -1,7 +1,6 @@
 #ifndef SCENE_H
 #define SCENE_H
 
-#include <array>
 #include <vector>
 #include "raymath/linear.h"
 #include "raymath/geometry.h"
@@ -18,6 +17,7 @@
 
 namespace rprimitives {
 class Hitable;
+class Light;
 }
 
 namespace renv {
@@ -55,7 +55,7 @@ public:
     }
 
     CUDA_HOSTDEV
-    rmath::Ray<float> at(float canvas_x, float canvas_y) const  {
+    rmath::Ray<float> at(float canvas_x, float canvas_y) const {
         const rmath::Mat3<float> rot_mat = this->o.to_Mat3();
         rmath::Vec3<float> r = rmath::Vec3<float>({rot_mat(0, 0), rot_mat(1, 0), rot_mat(2, 0)}).normalized();
         rmath::Vec3<float> u = rmath::Vec3<float>({rot_mat(0, 1), rot_mat(1, 1), rot_mat(2, 1)}).normalized();
@@ -73,11 +73,38 @@ private:
     Camera cam;
     rprimitives::Texture atlas;
     rprimitives::Hitable** hitables;
+    rprimitives::Light** lights;
+    rmath::Vec3<float> dist_atten;
+    rmath::Vec4<float> ambience;
     rprimitives::VertexBuffer buffer;
     int nh;
+    int nl;
 public:
-    Scene(Canvas& canvas, Camera camera, rprimitives::Texture atlas, std::vector<rprimitives::Hitable*> hitables,
-                rprimitives::VertexBuffer buffer);
+    Scene(Canvas canvas, Camera camera, rprimitives::Texture atlas, 
+                rprimitives::Hitable** hitables, int n_hitables, 
+                rprimitives::Light** lights, int n_lights,
+                rprimitives::VertexBuffer buffer): canvas(canvas), cam(camera),
+                atlas(atlas), hitables(hitables), lights(lights), 
+                dist_atten(), ambience(), buffer(buffer),
+                nh(n_hitables), nl(n_lights){}
+
+    void set_dist_atten(float const_term, float linear_term, float quad_term) {
+        dist_atten = rmath::Vec3<float>({const_term, linear_term, quad_term});
+    }
+
+    void set_ambience(rmath::Vec4<float> amb) {
+        ambience = amb;
+    }
+
+    CUDA_HOSTDEV
+    const rmath::Vec3<float>& get_dist_atten() const {
+        return dist_atten;
+    }
+
+    CUDA_HOSTDEV
+    const rmath::Vec4<float>& get_ambience() const {
+        return ambience;
+    }
 
     CUDA_HOSTDEV
     Canvas& get_canvas() {
@@ -100,13 +127,23 @@ public:
     }
 
     CUDA_HOSTDEV
+    rprimitives::Light** get_lights() {
+        return lights;
+    }
+
+    CUDA_HOSTDEV
     rprimitives::VertexBuffer& get_vertex_buffer() {
         return buffer;
     }
 
     CUDA_HOSTDEV
-    int n_hitables() {
+    int n_hitables() const {
         return nh;
+    }
+
+    CUDA_HOSTDEV
+    int n_lights() const {
+        return nl;
     }
 };
 }

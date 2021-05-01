@@ -2,30 +2,20 @@
 #include "raymath/linear.h"
 #include "raytracer.h"
 #include "iostream"
+#include "rayenv/scene.h"
+#include "rayenv/scene.cuh"
 #include "rayprimitives/texture.cuh"
 #include "rayprimitives/material.h"
+#include "rayprimitives/material.cuh"
 #include "rayprimitives/hitable.cuh"
 #include "rayprimitives/trimesh.cuh"
+#include "rayprimitives/light.cuh"
 #include "gputils/alloc.h"
 #include "assets.h"
 
 namespace rtracer {
 static const char* ATLAS_PATH = "assets/sus.png";
-
-__device__
-rprimitives::Isect cast_ray(renv::Scene& scene, rmath::Ray<float> r) {
-    // TODO: use bvh tree
-    rprimitives::Isect best_hit{};
-    rprimitives::Hitable** hitables = scene.get_hitables();
-    for (int i = 0; i < scene.n_hitables(); i++) {
-        rprimitives::Hitable* h = hitables[i];
-        rprimitives::Isect cur_hit = h->hit(r, scene);
-        if (cur_hit.hit && (!best_hit.hit || best_hit.time > cur_hit.time)) {
-            best_hit = cur_hit;
-        }
-    }
-    return best_hit;
-}
+static const int SQ_WIDTH = 16;
 
 __global__
 void trace(renv::Scene* scene) {
@@ -43,18 +33,23 @@ void trace(renv::Scene* scene) {
             rmath::Vec4<float> norm_col = get_color_from_texture(atlas, i, j);
             canvas.set_color(i, j, renv::Color(norm_col[0], norm_col[1], norm_col[2], norm_col[3]));
             rmath::Ray<float> r = cam.at(i, j);
-            rprimitives::Isect isect = cast_ray(*scene, r);
+            rprimitives::Isect isect{};
+            renv::cast_ray(scene, r, isect);
             if (isect.hit) {
-                canvas.set_color(i, j, renv::Color(1.0f, 1.0f, 1.0f, 1.0f));
+                rmath::Vec4<float> c = rprimitives::illuminate(r, isect, scene);
+                canvas.set_color(i, j, renv::Color(c[0] > 1.0f ? 1.0f : c[0], 
+                                                   c[1] > 1.0f ? 1.0f : c[1], 
+                                                   c[2] > 1.0f ? 1.0f : c[2], 
+                                                   c[3] > 1.0f ? 1.0f : c[3]));
             }
         }
     }
 }
 
 void update_scene(renv::Scene* scene) {
-    dim3 dimBlock(32, 32);
-    int grid_dim_x = scene->get_canvas().get_width() / 32;
-    int grid_dim_y = scene->get_canvas().get_height() / 32;
+    dim3 dimBlock(SQ_WIDTH, SQ_WIDTH);
+    int grid_dim_x = scene->get_canvas().get_width() / SQ_WIDTH;
+    int grid_dim_y = scene->get_canvas().get_height() / SQ_WIDTH;
     dim3 dimGrid(grid_dim_x == 0 ? 1 : grid_dim_x, grid_dim_y == 0 ? 1 : grid_dim_y);
     trace<<<dimGrid, dimBlock>>>(scene);
     int rv = cudaDeviceSynchronize();
@@ -111,6 +106,38 @@ void build_meshes(MeshConfig* config) {
     } 
 }
 
+struct LightConfig {
+    rprimitives::Light** lights;
+    rmath::Vec3<float>* point_light_pos;
+    rmath::Vec3<float>* dir_light_dir;
+    rmath::Vec4<float>* point_light_col;
+    rmath::Vec4<float>* dir_light_col;
+    int n_points;
+    int n_directional;
+};
+
+__global__
+void build_lights(LightConfig* config) {
+    int idx = blockDim.x * blockIdx.x + threadIdx.x;
+    int stride = blockDim.x * gridDim.x;
+    for (int i = idx; i < config->n_points + config->n_directional; i += stride) {
+        rprimitives::Light* light;
+        if (i > config->n_points) {
+            rprimitives::PointLight* point_light = new rprimitives::PointLight();
+            point_light->set_color(config->point_light_col[i]);
+            point_light->set_pos(config->point_light_pos[i]);
+            light = point_light;
+        } else {
+            int j = i - config->n_points;
+            rprimitives::DirLight* dir_light = new rprimitives::DirLight();
+            dir_light->set_color(config->dir_light_col[j]);
+            dir_light->set_shine_dir(config->dir_light_dir[j]);
+            light = dir_light;
+        }
+        config->lights[i] = light;
+    }
+}
+
 renv::Scene* build_scene(int width, int height) {
     renv::Canvas canvas{width, height};
     renv::Camera camera{M_PI / 4, 200.0f, canvas};
@@ -141,10 +168,19 @@ renv::Scene* build_scene(int width, int height) {
     init_trimesh_rot.push_back(rmath::Quat<float>::identity());
     counts.push_back(1);
     shadings.push_back(rprimitives::Shade(rmath::Vec4<float>{1.0f, 1.0f, 1.0f, 1.0f}));
-    mats.push_back(rprimitives::Material{});
+    mats.push_back(rprimitives::Material(
+        rmath::Vec4<float>(),
+        rmath::Vec4<float>(),
+        rmath::Vec4<float>({1.0f, 0.0f, 0.0f, 1.0f}),
+        rmath::Vec4<float>({1.0f, 1.0f, 1.0f, 1.0f}),
+        rmath::Vec4<float>(),
+        rmath::Vec4<float>(),
+        10.0f,
+        0.0f
+    ));
     thrust::inclusive_scan(counts.data(), counts.data() + counts.size(), counts.data()); // compute prefix sum for ends
 
-    // copy data to gpu
+    // copy mesh data to gpu
     int* ends = gputils::copy_to_gpu<int>(counts.data(), counts.size());
     rprimitives::Shade* dev_shadings = gputils::copy_to_gpu<rprimitives::Shade>(shadings.data(), shadings.size());
     rprimitives::Material* dev_mats = gputils::copy_to_gpu<rprimitives::Material>(mats.data(), mats.size());
@@ -152,12 +188,9 @@ renv::Scene* build_scene(int width, int height) {
     rmath::Vec3<float>* dev_mesh_pos = gputils::copy_to_gpu<rmath::Vec3<float>>(init_trimesh_pos.data(), init_trimesh_pos.size());
     rmath::Quat<float>* dev_mesh_rot = gputils::copy_to_gpu<rmath::Quat<float>>(init_trimesh_rot.data(), init_trimesh_rot.size());
 
-    // create meshes
     rprimitives::Trimesh** meshes;
     cudaMallocManaged(&meshes, sizeof(rprimitives::Trimesh*) * counts.size());
-    
-    // create meshes
-    MeshConfig config = {
+    MeshConfig mesh_config = {
                 meshes, 
                 ends, 
                 dev_tris, 
@@ -167,25 +200,59 @@ renv::Scene* build_scene(int width, int height) {
                 dev_mesh_rot,
                 (int) counts.size(),
             };
-    MeshConfig* config_ptr;
-    cudaMalloc(&config_ptr, sizeof(MeshConfig));
-    cudaMemcpy(config_ptr, &config, sizeof(MeshConfig), cudaMemcpyHostToDevice);
-    build_meshes<<<1, 512>>>(config_ptr);
-    cudaDeviceSynchronize();
+    MeshConfig* mesh_config_ptr = gputils::copy_to_gpu(&mesh_config, 1);
+    build_meshes<<<1, 512>>>(mesh_config_ptr);
 
-    cudaFree(config_ptr);
+    // free memory
+    cudaFree(mesh_config_ptr);
     cudaFree(ends);
     cudaFree(dev_shadings);
     cudaFree(dev_mats);
     cudaFree(dev_tris);
 
-    std::vector<rprimitives::Hitable*> hitables = std::vector<rprimitives::Hitable*>{};
+    // copy meshes to hitables list
+    rprimitives::Hitable** hitables;
+    int n_hitables = counts.size();
+    cudaMallocManaged(&hitables, sizeof(rprimitives::Hitable) * n_hitables);
     for (int i = 0; i < counts.size(); i++) {
-        hitables.push_back(meshes[i]);
+        hitables[i] = meshes[i];
     }
     cudaFree(meshes);
 
-    renv::Scene local_scene = renv::Scene{canvas, camera, atlas, hitables, buffer};
+    // create lights
+    std::vector<rmath::Vec3<float>> point_light_pos{};
+    std::vector<rmath::Vec3<float>> dir_light_dir{};
+    std::vector<rmath::Vec4<float>> point_light_col{};
+    std::vector<rmath::Vec4<float>> dir_light_col{};
+    dir_light_dir.push_back(rmath::Vec3<float>({0.0f, -1.0f, 1.0f}));
+    dir_light_col.push_back(rmath::Vec4<float>({1.0f, 1.0f, 1.0f, 1.0f}));
+
+    // copy light data to gpu
+    rmath::Vec3<float>* dev_point_light_pos = gputils::copy_to_gpu<rmath::Vec3<float>>(point_light_pos.data(), point_light_pos.size());
+    rmath::Vec3<float>* dev_dir_light_dir = gputils::copy_to_gpu<rmath::Vec3<float>>(dir_light_dir.data(), dir_light_dir.size());
+    rmath::Vec4<float>* dev_point_light_col = gputils::copy_to_gpu<rmath::Vec4<float>>(point_light_col.data(), point_light_col.size());
+    rmath::Vec4<float>* dev_dir_light_col = gputils::copy_to_gpu<rmath::Vec4<float>>(dir_light_col.data(), dir_light_col.size());
+
+    rprimitives::Light** lights;
+    int n_point_lights = point_light_col.size();
+    int n_dir_lights = dir_light_col.size();
+    int n_lights = n_point_lights + n_dir_lights;
+    cudaMallocManaged(&lights, sizeof(rprimitives::Light*) * n_lights);
+    LightConfig light_config = {lights, dev_point_light_pos, dev_dir_light_dir, dev_point_light_col, dev_dir_light_col, n_point_lights, n_dir_lights};
+    LightConfig* light_config_ptr = gputils::copy_to_gpu(&light_config, 1);
+    build_lights<<<1, 1024>>>(light_config_ptr);
+
+    // free memory
+    cudaFree(dev_point_light_pos);
+    cudaFree(dev_dir_light_dir);
+    cudaFree(dev_point_light_col);
+    cudaFree(dev_dir_light_col);
+    cudaFree(light_config_ptr);
+
+    // configure local scene
+    renv::Scene local_scene = renv::Scene{canvas, camera, atlas, hitables, n_hitables, lights, n_lights, buffer};
+    local_scene.set_ambience(rmath::Vec4<float>({1.0f, 1.0f, 1.0f, 1.0f}));
+
     renv::Scene* scene;
     cudaMallocManaged(&scene, sizeof(renv::Scene));
     cudaMemcpy(scene, &local_scene, sizeof(renv::Scene), cudaMemcpyDefault);

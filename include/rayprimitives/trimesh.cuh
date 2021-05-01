@@ -11,28 +11,6 @@
 #include "gputils/alloc.h"
 
 namespace rprimitives {
-struct Shade {
-    union Data {
-        struct TextData {
-            int texture_x;
-            int texture_y;
-            int texture_width;
-            int texture_height;
-        } text_data;
-        rmath::Vec4<float> col;
-        __host__ __device__
-        Data(rmath::Vec4<float> col): col(col) {}
-        __host__ __device__
-        Data(int texture_x, int texture_y, int texture_width, int texture_height): text_data{texture_x, texture_y, texture_width, texture_height}{}
-    } data;
-    bool use_texture;
-    __host__ __device__
-    Shade(rmath::Vec4<float> col): data(col), use_texture(false) {}
-    __host__ __device__
-    Shade(int texture_x, int texture_y, int texture_width, int texture_height): data(texture_x, texture_y, texture_width, texture_height),
-                            use_texture(true) {}
-};
-
 class TriInner {
 private:
     rmath::Vec3<int> indices;
@@ -57,7 +35,7 @@ public:
     rmath::Vec3<float> get_normal(int i, VertexBuffer& buffer);
 
     __device__
-    Isect tri_hit(const rmath::Ray<float>& ray, renv::Scene& scene);
+    bool tri_hit(const rmath::Ray<float>& ray, renv::Scene* scene, Isect& isect);
 
     friend class Triangle;
     friend class TrimeshBuilder;
@@ -73,7 +51,7 @@ public:
                                     n_triangles(n_triangles){}
     
     __device__
-    Isect hit_local(const rmath::Ray<float>& local_ray, renv::Scene& scene) override;
+    bool hit_local(const rmath::Ray<float>& local_ray, renv::Scene* scene, Isect& isect) override;
 
     __host__ __device__
     ~Trimesh() override {}

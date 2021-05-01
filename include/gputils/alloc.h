@@ -13,9 +13,11 @@ namespace gputils {
 
 template<typename T>
 T* copy_to_gpu(T* cpu, int n) {
-    T* rv;
-    cudaMalloc(&rv, sizeof(T) * n);
-    cudaMemcpy(rv, cpu, sizeof(T) * n, cudaMemcpyHostToDevice);
+    T* rv = NULL;
+    if (n > 0) {
+        cudaMalloc(&rv, sizeof(T) * n);
+        cudaMemcpy(rv, cpu, sizeof(T) * n, cudaMemcpyHostToDevice);
+    }
     return rv;
 }
 

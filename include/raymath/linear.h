@@ -214,16 +214,19 @@ template<typename T>
 CUDA_HOSTDEV
 Vec<T, 3> reflect(const Vec<T, 3>& dir, const Vec<T, 3>& norm) {
     // TODO: test
+    float d_len = dir.len();
     Vec<T, 3> d_norm = dir.normalized();
     Vec<T, 3> n_norm = norm.normalized();
     Vec<T, 3> projection = dot(d_norm, n_norm) * n_norm;
-    return d_norm - 2 * n_norm;
+    Vec<T, 3> r_norm = (d_norm - 2 * n_norm).normalized();
+    return d_len * r_norm;
 }
 
 template<typename T>
 CUDA_HOSTDEV
 Vec<T, 3> refract(const Vec<T, 3>& dir, const Vec<T, 3>& norm, T index_from, T index_to, bool& tir) {
     // TODO: test
+    float d_len = dir.len();
     Vec<T, 3> d_norm = dir.normalized();
     Vec<T, 3> n_norm = norm.normalized();
     T index_ratio = index_from / index_to;
@@ -231,10 +234,10 @@ Vec<T, 3> refract(const Vec<T, 3>& dir, const Vec<T, 3>& norm, T index_from, T i
     T sint_2 = index_ratio * index_ratio * (1 - cosi * cosi);
     if (sint_2 > 1) {
         tir = true;
-        return reflect(d_norm, n_norm);
+        return d_len * reflect(d_norm, n_norm);
     } else {
         tir = false;
-        return index_ratio * d_norm + (index_ratio * cosi - sqrt(1 - sint_2)) * n_norm;
+        return d_len * (index_ratio * d_norm + (index_ratio * cosi - sqrt(1 - sint_2)) * n_norm);
     }
 }
 

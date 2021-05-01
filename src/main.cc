@@ -15,6 +15,7 @@ static const float ROT_SPEED = 0.01f;
 
 int main(int argc, const char** argv) {
     renv::Scene* scene = rtracer::build_scene(WIDTH, HEIGHT);
+    std::cout << "Loaded scene" << std::endl;
     // initialize window
     SDL_Init(SDL_INIT_VIDEO);
     bool running = true;
@@ -25,15 +26,15 @@ int main(int argc, const char** argv) {
     scene->get_canvas().get_surface(&surface); // link scene near plane to screen
     assert(surface != NULL);
     // trap mouse
-    bool mouse_trapped = true;
-    SDL_SetRelativeMouseMode(SDL_TRUE);
-    SDL_ShowCursor(SDL_DISABLE);
+    bool mouse_trapped = false;
+    SDL_SetRelativeMouseMode(SDL_FALSE);
+    SDL_ShowCursor(SDL_ENABLE);
     while (running) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
                 case SDL_QUIT: {
-                    std::cout << "exiting" << std::endl;
+                    std::cout << "Exiting" << std::endl;
                     running = false;
                     break;
                 }
