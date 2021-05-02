@@ -25,15 +25,20 @@ int main(int argc, const char** argv) {
     mat.set_Ke({0.0f, 0.0f, 0.0f, 1.0f});
     mat.set_Kd({1.0f, 0.0f, 0.0f, 1.0f});
     mat.set_Ka({0.2f, 0.2f, 0.2f, 1.0f});
+    mat.set_Kr({1.0f, 1.0f, 1.0f, 1.0f});
     mat.set_Ks({1.0f, 1.0f, 1.0f, 1.0f});
     mat.set_Kt({0.2f, 0.2f, 0.2f, 1.0f});
     mat.set_alpha(.8f);
-    scene_builder.build_cube(1.0f, 
-                rmath::Vec3<float>({0.0f, 0.0f, 5.0f}),
-                rmath::Quat<float>::identity(),
+    rtracer::MeshBuilder& mesh_builder = scene_builder.build_cube(.9f,
                 rprimitives::Shade(rmath::Vec4<float>({0.0f, 1.0f, 0.0f, 1.0f})),
                 mat
     );
+    renv::Transformation& trans1 = scene_builder.add_trans(mesh_builder);
+    trans1.set_position({0.0f, 0.0f, 5.0f});
+    renv::Transformation& trans2 = scene_builder.add_trans(mesh_builder);
+    trans2.set_position({-1.0f, 0.0f, 5.0f});
+    renv::Transformation& trans3 = scene_builder.add_trans(mesh_builder);
+    trans3.set_position({1.0f, 0.0f, 5.0f});
     scene_builder.add_directional_light({0.0f, -1.0f, -1.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
     scene_builder.set_ambience({0.0f, 0.0f, 1.0f, 1.0f});
     scene_builder.set_recurse_depth(1);

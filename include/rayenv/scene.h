@@ -67,6 +67,19 @@ public:
     }
 };
 
+class Scene;
+
+class Transformation: public rprimitives::Entity {
+private:
+    int hitable_idx;
+public:
+    Transformation(int hi): hitable_idx(hi) {}
+    CUDA_HOSTDEV
+    int get_hitable_idx() const {
+        return hitable_idx;
+    }
+};
+
 class Scene {
 private:
     Canvas canvas;
@@ -74,21 +87,24 @@ private:
     rprimitives::Texture atlas;
     rprimitives::Hitable** hitables;
     rprimitives::Light** lights;
+    Transformation* trans;
     rmath::Vec3<float> dist_atten;
     rmath::Vec4<float> ambience;
     rprimitives::VertexBuffer buffer;
     int nh;
     int nl;
+    int nt;
     int recurse_depth;
     bool debugging;
 public:
     Scene(Canvas canvas, Camera camera, rprimitives::Texture atlas, 
                 rprimitives::Hitable** hitables, int n_hitables, 
                 rprimitives::Light** lights, int n_lights,
+                Transformation* trans, int n_trans,
                 rprimitives::VertexBuffer buffer): canvas(canvas), cam(camera),
-                atlas(atlas), hitables(hitables), lights(lights), 
-                dist_atten(), ambience(), buffer(buffer),
-                nh(n_hitables), nl(n_lights), recurse_depth(0), debugging(false) {}
+                atlas(atlas), hitables(hitables), lights(lights), trans(trans),
+                dist_atten(), ambience(), buffer(buffer), nh(n_hitables), 
+                nl(n_lights), nt(n_trans), recurse_depth(0), debugging(false) {}
 
     void set_dist_atten(float const_term, float linear_term, float quad_term) {
         dist_atten = rmath::Vec3<float>({const_term, linear_term, quad_term});
@@ -147,6 +163,11 @@ public:
     }
 
     CUDA_HOSTDEV
+    Transformation* get_trans() {
+        return trans;
+    }
+
+    CUDA_HOSTDEV
     rprimitives::Light** get_lights() {
         return lights;
     }
@@ -164,6 +185,11 @@ public:
     CUDA_HOSTDEV
     int n_lights() const {
         return nl;
+    }
+
+    CUDA_HOSTDEV
+    int n_trans() const {
+        return nt;
     }
 };
 }

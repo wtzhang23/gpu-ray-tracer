@@ -6,19 +6,35 @@ namespace renv {
 static const int MAX_DEPTH = 10;
 
 __device__
-bool cast_ray(Scene* scene, rmath::Ray<float> r, rprimitives::Isect& isect) {
-    // TODO: use bvh tree
+bool cast_local(Scene* scene, const rmath::Ray<float>& r, rprimitives::Isect& isect, const Transformation& t) {
     rprimitives::Hitable** hitables = scene->get_hitables();
+    rprimitives::Hitable* h = hitables[t.get_hitable_idx()];
+    
+    rmath::Vec3<float> local_dir = t.vec_to_local(r.direction());
+    float dir_len = local_dir.len();
+    rmath::Ray<float> local_ray = rmath::Ray<float>({t.point_to_local(r.origin()), local_dir});
+    bool rv = h->hit(local_ray, scene, isect);
+    if (rv) {
+        isect.norm = t.vec_from_local(isect.norm);
+        isect.time *= dir_len;
+    }
+    return rv;
+}
+
+__device__
+bool cast_ray(Scene* scene, const rmath::Ray<float>& r, rprimitives::Isect& isect) {
+    // TODO: use bvh tree
+    Transformation* trans = scene->get_trans();
     bool hit = false;
-    for (int i = 0; i < scene->n_hitables(); i++) {
-        rprimitives::Hitable* h = hitables[i];
-        hit |= h->hit(r, scene, isect);
+    for (int i = 0; i < scene->n_trans(); i++) {
+        const Transformation& t = trans[i];
+        hit |= cast_local(scene, r, isect, t);
     }
     return hit;
 }
 
 __device__
-rmath::Vec4<float> propagate_ray(Scene* scene, rmath::Ray<float> r) {
+rmath::Vec4<float> propagate_ray(Scene* scene, const rmath::Ray<float>& r) {
     rprimitives::Isect isect;
     enum FrameType {
         NORMAL,

@@ -13,14 +13,17 @@ namespace rtracer {
 
 class MeshBuilder {
 private:
+    int hitable_idx;
     std::vector<rmath::Vec3<int>> triangles;
     std::vector<rprimitives::Shade> shadings;
     std::vector<rprimitives::Material> mats;
     rmath::Vec3<float> pos;
     rmath::Quat<float> rot;
-public:
-    MeshBuilder(rmath::Vec3<float> pos, rmath::Quat<float> rot): triangles(), shadings(), 
+    MeshBuilder(int hi, rmath::Vec3<float> pos, rmath::Quat<float> rot): 
+                        hitable_idx(hi), triangles(), shadings(), 
                         mats(), pos(pos), rot(rot) {}
+    MeshBuilder(int hi): MeshBuilder(hi, rmath::Vec3<float>(), rmath::Quat<float>::identity()){}
+public:
     void add_triangle(rmath::Vec3<int> tri, rprimitives::Shade shade, rprimitives::Material mat) {
         triangles.push_back(tri);
         shadings.push_back(shade);
@@ -38,12 +41,14 @@ private:
     std::vector<rmath::Vec3<float>> dir_light_dir;
     std::vector<rmath::Vec4<float>> point_light_col;
     std::vector<rmath::Vec4<float>> dir_light_col;
+    std::vector<renv::Transformation> trans;
     std::string atlas_path;
     rmath::Vec4<float> ambience;
     int recurse_depth;
 public:
     SceneBuilder(std::string atlas_path): vertices(), meshes(), point_light_pos(),
-                        dir_light_dir(), point_light_col(), dir_light_col(), atlas_path(atlas_path), ambience(),
+                        dir_light_dir(), point_light_col(), dir_light_col(), 
+                        trans(), atlas_path(atlas_path), ambience(), 
                         recurse_depth(0){}
 
     int add_vertex(rmath::Vec3<float> v) {
@@ -57,12 +62,21 @@ public:
     }
 
     MeshBuilder& create_mesh(rmath::Vec3<float> pos, rmath::Quat<float> rot) {
-        meshes.push_back(MeshBuilder{pos, rot});
+        int hi = meshes.size();
+        meshes.push_back(MeshBuilder{hi, pos, rot});
         return meshes.back();
     }
 
-    void build_cube(float scale, rmath::Vec3<float> pos, rmath::Quat<float> rot, 
-                        rprimitives::Shade shade, rprimitives::Material mat);
+    MeshBuilder& create_mesh() {
+        return create_mesh(rmath::Vec3<float>(), rmath::Quat<float>::identity());
+    }
+
+    renv::Transformation& add_trans(const MeshBuilder& builder) {
+        trans.push_back(renv::Transformation{builder.hitable_idx});
+        return trans.back();
+    }
+
+    MeshBuilder& build_cube(float scale, rprimitives::Shade shade, rprimitives::Material mat);
 
     void add_directional_light(rmath::Vec3<float> dir, rmath::Vec4<float> col) {
         dir_light_dir.push_back(dir);

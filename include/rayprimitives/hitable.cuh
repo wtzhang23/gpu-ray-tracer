@@ -44,12 +44,12 @@ public:
         rmath::Vec3<float> local_dir = vec_to_local(ray.direction());
         float dir_len = local_dir.len();
         rmath::Ray<float> local_ray = rmath::Ray<float>(point_to_local(ray.origin()), local_dir);
-        if (hit_local(local_ray, scene, isect)) {
+        bool rv = hit_local(local_ray, scene, isect);
+        if (rv) {
             isect.norm = vec_from_local(isect.norm);
             isect.time *= dir_len; // account for scaling
-            return true;
         }
-        return false;
+        return rv;
     }
 };
 }

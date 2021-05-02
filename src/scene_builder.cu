@@ -175,9 +175,13 @@ renv::Scene* SceneBuilder::build_scene(renv::Canvas canvas, renv::Camera camera)
     cudaFree(dev_dir_light_col);
     cudaFree(light_config_ptr);
 
+    // copy transformations
+    renv::Transformation* trans = gputils::copy_to_gpu(this->trans.data(), this->trans.size());
+    int n_trans = this->trans.size();
+
     // configure local scene
     renv::Scene local_scene = renv::Scene{canvas, camera, atlas, (rprimitives::Hitable**) hitables,
-                                        n_hitables, lights, n_lights, buffer};
+                                        n_hitables, lights, n_lights, trans, n_trans, buffer};
     local_scene.set_ambience(ambience);
     local_scene.set_recurse_depth(recurse_depth);
     renv::Scene* s = (renv::Scene*) gputils::create_buffer(1, sizeof(renv::Scene));
@@ -185,8 +189,7 @@ renv::Scene* SceneBuilder::build_scene(renv::Canvas canvas, renv::Camera camera)
     return s;
 }
 
-void SceneBuilder::build_cube(float scale, rmath::Vec3<float> pos, rmath::Quat<float> rot, 
-                                            rprimitives::Shade shade, rprimitives::Material mat) {
+MeshBuilder& SceneBuilder::build_cube(float scale, rprimitives::Shade shade, rprimitives::Material mat) {
     /*   e-----f
      *  /|    /|
      * a-----b |
@@ -211,7 +214,7 @@ void SceneBuilder::build_cube(float scale, rmath::Vec3<float> pos, rmath::Quat<f
     rmath::Vec3<float> g = scale * _g;
     rmath::Vec3<float> h = scale * _h;
 
-    MeshBuilder& builder = create_mesh(pos, rot);
+    MeshBuilder& builder = create_mesh();
     // front
     builder.add_triangle(rmath::Vec3<int>{add_vertex(d), add_vertex(a), add_vertex(b)},
                             shade, mat);
@@ -242,6 +245,7 @@ void SceneBuilder::build_cube(float scale, rmath::Vec3<float> pos, rmath::Quat<f
                             shade, mat);
     builder.add_triangle(rmath::Vec3<int>{add_vertex(d), add_vertex(h), add_vertex(g)},
                             shade, mat);
+    return builder;
 }
 
 }
