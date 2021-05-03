@@ -43,13 +43,10 @@ private:
     std::vector<rmath::Vec4<float>> dir_light_col;
     std::vector<renv::Transformation> trans;
     std::string atlas_path;
-    rmath::Vec4<float> ambience;
-    int recurse_depth;
 public:
     SceneBuilder(std::string atlas_path): vertices(), meshes(), point_light_pos(),
                         dir_light_dir(), point_light_col(), dir_light_col(), 
-                        trans(), atlas_path(atlas_path), ambience(), 
-                        recurse_depth(0){}
+                        trans(), atlas_path(atlas_path){}
 
     int add_vertex(rmath::Vec3<float> v) {
         int idx = vertices.size();
@@ -87,15 +84,6 @@ public:
         point_light_pos.push_back(pos);
         point_light_col.push_back(col);
     }
-
-    void set_ambience(rmath::Vec4<float> ambience) {
-        this->ambience = ambience;
-    }
-
-    void set_recurse_depth(float depth) {
-        recurse_depth = depth;
-    }
-
     renv::Scene* build_scene(renv::Canvas canvas, renv::Camera camera);
 };
 

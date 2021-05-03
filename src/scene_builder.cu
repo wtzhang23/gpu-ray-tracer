@@ -54,7 +54,10 @@ void build_meshes(MeshConfig* config) {
         int count = config->ends[i] - begin;
         rprimitives::TriInner* triangles = new rprimitives::TriInner[count];
         for (int j = 0; j < count; j++) {
-            rprimitives::TriInner inner = rprimitives::TriInner(config->indices[begin + j], config->mats[begin + j], config->shadings[begin + j]);
+            rprimitives::TriInner inner = rprimitives::TriInner(
+                            config->indices[begin + j], 
+                            config->mats[begin + j], 
+                            config->shadings[begin + j]);
             triangles[j] = inner;
         }
         rprimitives::Trimesh* mesh = new rprimitives::Trimesh(triangles, count);
@@ -80,7 +83,7 @@ void build_lights(LightConfig* config) {
     int stride = blockDim.x * gridDim.x;
     for (int i = idx; i < config->n_points + config->n_directional; i += stride) {
         rprimitives::Light* light;
-        if (i > config->n_points) {
+        if (i < config->n_points) {
             rprimitives::PointLight* point_light = new rprimitives::PointLight();
             point_light->set_color(config->point_light_col[i]);
             point_light->set_pos(config->point_light_pos[i]);
@@ -182,8 +185,6 @@ renv::Scene* SceneBuilder::build_scene(renv::Canvas canvas, renv::Camera camera)
     // configure local scene
     renv::Scene local_scene = renv::Scene{canvas, camera, atlas, (rprimitives::Hitable**) hitables,
                                         n_hitables, lights, n_lights, trans, n_trans, buffer};
-    local_scene.set_ambience(ambience);
-    local_scene.set_recurse_depth(recurse_depth);
     renv::Scene* s = (renv::Scene*) gputils::create_buffer(1, sizeof(renv::Scene));
     cudaMemcpy(s, &local_scene, sizeof(renv::Scene), cudaMemcpyDefault);
     return s;

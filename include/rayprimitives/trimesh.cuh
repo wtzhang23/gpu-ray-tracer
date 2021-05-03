@@ -18,7 +18,7 @@ private:
     Shade shading;
 public:
     __device__
-    TriInner(): indices(), mat(), shading(rmath::Vec4<float>()){}
+    TriInner(): indices(), mat(), shading(){}
 
     __device__
     TriInner(rmath::Vec3<int> indices, Material mat, Shade shading): indices(indices), mat(mat), shading(shading){}

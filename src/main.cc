@@ -1,51 +1,33 @@
-#include <iostream>
 #include <SDL2/SDL.h>
-#include <thread>
-#include <atomic>
-#include <mutex>
+#include <SDL2/SDL_ttf.h>
+#include <chrono>
+#include <sstream>
+#include <iostream>
 #include "raytracer.h"
 #include "rayenv/canvas.h"
 #include "raymath/geometry.h"
 #include "raymath/linear.h"
 #include "rayenv/scene.h"
-#include "scene_builder.h"
+#include "cube_world.h"
 
 static const int WIDTH = 640;
 static const int HEIGHT = 480;
 static const float MOVE_SPEED = 0.2f;
 static const float ROT_SPEED = 0.01f;
-static const char* ATLAS_PATH = "./assets/sus.png";
+static const int SAMPLE_PERIOD = 50;
+static const char* CONFIG_PATH = "./config.json";
+static const char* FONT_PATH = "./assets/arial.ttf";
+static const int FONT_SIZE = 12;
+static const SDL_Color FOREGROUND_TXT_COL = {255, 255, 255, 255};
+static const SDL_Color BACKGROUND_TXT_COL = {0, 0, 0, 0};
 
 int main(int argc, const char** argv) {
     // build scene
-    renv::Canvas canvas{WIDTH, HEIGHT};
-    renv::Camera cam{M_PI / 4, 200, canvas};
-    rtracer::SceneBuilder scene_builder{std::string(ATLAS_PATH)};
-    rprimitives::Material mat{};
-    mat.set_Ke({0.0f, 0.0f, 0.0f, 1.0f});
-    mat.set_Kd({1.0f, 0.0f, 0.0f, 1.0f});
-    mat.set_Ka({0.2f, 0.2f, 0.2f, 1.0f});
-    mat.set_Kr({1.0f, 1.0f, 1.0f, 1.0f});
-    mat.set_Ks({1.0f, 1.0f, 1.0f, 1.0f});
-    mat.set_Kt({0.2f, 0.2f, 0.2f, 1.0f});
-    mat.set_alpha(.8f);
-    rtracer::MeshBuilder& mesh_builder = scene_builder.build_cube(.9f,
-                rprimitives::Shade(rmath::Vec4<float>({0.0f, 1.0f, 0.0f, 1.0f})),
-                mat
-    );
-    renv::Transformation& trans1 = scene_builder.add_trans(mesh_builder);
-    trans1.set_position({0.0f, 0.0f, 5.0f});
-    renv::Transformation& trans2 = scene_builder.add_trans(mesh_builder);
-    trans2.set_position({-1.0f, 0.0f, 5.0f});
-    renv::Transformation& trans3 = scene_builder.add_trans(mesh_builder);
-    trans3.set_position({1.0f, 0.0f, 5.0f});
-    scene_builder.add_directional_light({0.0f, -1.0f, -1.0f}, {1.0f, 1.0f, 1.0f, 1.0f});
-    scene_builder.set_ambience({0.0f, 0.0f, 1.0f, 1.0f});
-    scene_builder.set_recurse_depth(1);
-    renv::Scene* scene = scene_builder.build_scene(canvas, cam);
+    renv::Scene* scene = cube_world::generate(CONFIG_PATH);
     std::cout << "Loaded scene" << std::endl;
     // initialize window
     SDL_Init(SDL_INIT_VIDEO);
+    TTF_Init();
     bool running = true;
     SDL_Window* window = SDL_CreateWindow("Ray Tracer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
                                                             WIDTH, HEIGHT, SDL_WINDOW_RESIZABLE);
@@ -53,90 +35,109 @@ int main(int argc, const char** argv) {
     SDL_Surface* surface = NULL;
     scene->get_canvas().get_surface(&surface); // link scene near plane to screen
     assert(surface != NULL);
+    TTF_Font* font = TTF_OpenFont(FONT_PATH, FONT_SIZE);
     // trap mouse
     bool mouse_trapped = false;
     SDL_SetRelativeMouseMode(SDL_FALSE);
     SDL_ShowCursor(SDL_ENABLE);
+    float fps = 0;
     while (running) {
-        SDL_Event event;
-        while (SDL_PollEvent(&event)) {
-            switch (event.type) {
-                case SDL_QUIT: {
-                    std::cout << "Exiting" << std::endl;
-                    running = false;
-                    break;
-                }
-                case SDL_KEYUP: {
-                    if (event.key.keysym.sym == SDLK_ESCAPE) {
-                        if (mouse_trapped) {
-                            SDL_SetRelativeMouseMode(SDL_FALSE);
-                            SDL_ShowCursor(SDL_ENABLE);
-                        } else {
-                            SDL_SetRelativeMouseMode(SDL_TRUE);
-                            SDL_ShowCursor(SDL_DISABLE);
-                        }
+        // create txt
+        std::stringstream msg{};
+        msg << "FPS: " << fps;
+        SDL_Surface* text_surface = TTF_RenderText_Shaded(font, msg.str().c_str(), FOREGROUND_TXT_COL, BACKGROUND_TXT_COL);
 
-                        mouse_trapped = !mouse_trapped;
+        auto from = std::chrono::high_resolution_clock::now();
+        for (int i = 0; i < SAMPLE_PERIOD; i++) {
+            if (!running) {
+                break;
+            }
+
+            SDL_Event event;
+            while (SDL_PollEvent(&event)) {
+                switch (event.type) {
+                    case SDL_QUIT: {
+                        std::cout << "Exiting" << std::endl;
+                        running = false;
+                        break;
                     }
-                }
-                case SDL_KEYDOWN: {
-                    if (mouse_trapped) {
-                        SDL_KeyboardEvent key_event = event.key;
-                        bool key_down = key_event.type == SDL_KEYDOWN;
-                        switch (key_event.keysym.sym) {
-                            case SDLK_w: {
-                                scene->get_camera().translate(rmath::Vec3<float>{0, 0, MOVE_SPEED});
-                                break;
+                    case SDL_KEYUP: {
+                        if (event.key.keysym.sym == SDLK_ESCAPE) {
+                            if (mouse_trapped) {
+                                SDL_SetRelativeMouseMode(SDL_FALSE);
+                                SDL_ShowCursor(SDL_ENABLE);
+                            } else {
+                                SDL_SetRelativeMouseMode(SDL_TRUE);
+                                SDL_ShowCursor(SDL_DISABLE);
                             }
-                            case SDLK_s: {
-                                scene->get_camera().translate(rmath::Vec3<float>{0, 0, -MOVE_SPEED});
-                                break;
-                            }
-                            case SDLK_a: {
-                                scene->get_camera().translate(rmath::Vec3<float>{-MOVE_SPEED, 0, 0});
-                                break;
-                            }
-                            case SDLK_d: {
-                                scene->get_camera().translate(rmath::Vec3<float>{MOVE_SPEED, 0, 0});
-                                break;
-                            }
-                            case SDLK_ESCAPE: {
-                                break;
-                            }
+
+                            mouse_trapped = !mouse_trapped;
                         }
                     }
-                    break;
-                }
-                case SDL_MOUSEMOTION: {
-                    if (mouse_trapped) {
-                        SDL_MouseMotionEvent mouse_event = event.motion;
-                        renv::Camera& cam = scene->get_camera(); 
-                        rmath::Vec<float, 2> rel_mot = rmath::Vec<float, 2>({(float) mouse_event.xrel, (float) -mouse_event.yrel}).normalized();
-                        rmath::Vec3<float> global_mot = rel_mot[0] * cam.right().direction() + rel_mot[1] * cam.up().direction();
-                        rmath::Vec3<float> axis = rmath::cross(global_mot, cam.forward().direction()).normalized();
-                        rmath::Quat<float> rot = rmath::Quat<float>(axis, -ROT_SPEED);
-                        cam.rotate(rot);
+                    case SDL_KEYDOWN: {
+                        if (mouse_trapped) {
+                            SDL_KeyboardEvent key_event = event.key;
+                            bool key_down = key_event.type == SDL_KEYDOWN;
+                            switch (key_event.keysym.sym) {
+                                case SDLK_w: {
+                                    scene->get_camera().translate(rmath::Vec3<float>{0, 0, MOVE_SPEED});
+                                    break;
+                                }
+                                case SDLK_s: {
+                                    scene->get_camera().translate(rmath::Vec3<float>{0, 0, -MOVE_SPEED});
+                                    break;
+                                }
+                                case SDLK_a: {
+                                    scene->get_camera().translate(rmath::Vec3<float>{-MOVE_SPEED, 0, 0});
+                                    break;
+                                }
+                                case SDLK_d: {
+                                    scene->get_camera().translate(rmath::Vec3<float>{MOVE_SPEED, 0, 0});
+                                    break;
+                                }
+                                case SDLK_ESCAPE: {
+                                    break;
+                                }
+                            }
+                        }
+                        break;
                     }
-                    break;
-                }
-                case SDL_MOUSEBUTTONDOWN: {
-                    if (!mouse_trapped && event.button.button == SDL_BUTTON_LEFT) {
-                        std::cout << "shooting debug ray at " << event.button.x << ", " << event.button.y << std::endl;
-                        rtracer::debug_cast(scene, event.button.x, event.button.y);
+                    case SDL_MOUSEMOTION: {
+                        if (mouse_trapped) {
+                            SDL_MouseMotionEvent mouse_event = event.motion;
+                            renv::Camera& cam = scene->get_camera(); 
+                            rmath::Vec<float, 2> rel_mot = rmath::Vec<float, 2>({(float) mouse_event.xrel, (float) -mouse_event.yrel}).normalized();
+                            rmath::Vec3<float> global_mot = rel_mot[0] * cam.right().direction() + rel_mot[1] * cam.up().direction();
+                            rmath::Vec3<float> axis = rmath::cross(global_mot, cam.forward().direction()).normalized();
+                            rmath::Quat<float> rot = rmath::Quat<float>(axis, -ROT_SPEED);
+                            cam.rotate(rot);
+                        }
+                        break;
                     }
-                    break;
+                    case SDL_MOUSEBUTTONDOWN: {
+                        if (!mouse_trapped && event.button.button == SDL_BUTTON_LEFT) {
+                            std::cout << "shooting debug ray at " << event.button.x << ", " << event.button.y << std::endl;
+                            rtracer::debug_cast(scene, event.button.x, event.button.y);
+                        }
+                        break;
+                    }
                 }
             }
+            SDL_FillRect(screen, NULL, 0x0);
+            rtracer::update_scene(scene);
+            SDL_BlitSurface(surface, NULL, screen, NULL);
+            SDL_BlitSurface(text_surface, NULL, screen, NULL);
+            SDL_UpdateWindowSurface(window);
         }
-        SDL_FillRect(screen, NULL, 0x0);
-        rtracer::update_scene(scene);
-        int rv = SDL_BlitSurface(surface, NULL, screen, NULL);
-        assert(rv == 0);
-        rv = SDL_UpdateWindowSurface(window);
-        assert(rv == 0);
+        auto to = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed = to - from;
+        fps = (double) SAMPLE_PERIOD / elapsed.count();
+        SDL_FreeSurface(text_surface);
     }
     SDL_FreeSurface(surface);
     SDL_DestroyWindow(window);
+    TTF_CloseFont(font);
+    TTF_Quit();
     SDL_Quit();
     return 0;
 }

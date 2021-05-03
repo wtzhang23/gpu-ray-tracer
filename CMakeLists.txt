@@ -1,3 +1,5 @@
+include(FindPkgConfig)
+
 set(CMAKE_BUILD_TYPE Debug)
 cmake_minimum_required(VERSION 3.10)
 configure_file(include/config.h.in include/config.h)
@@ -12,5 +14,6 @@ set_target_properties(RayTracer PROPERTIES POSITION_INDEPENDENT_CODE ON)
 # dependencies
 find_package(PNG REQUIRED)
 find_package(SDL2 REQUIRED)
+pkg_search_module(SDL2TTF REQUIRED SDL2_ttf>=2.0.0)
 find_package(RapidJSON REQUIRED)
-target_link_libraries(RayTracer ${PNG_LIBRARIES} ${SDL2_LIBRARIES} ${RAPIDJSON_LIBRARIES})
+target_link_libraries(RayTracer ${PNG_LIBRARIES} ${SDL2_LIBRARIES} ${RAPIDJSON_LIBRARIES} ${SDL2TTF_LIBRARIES})

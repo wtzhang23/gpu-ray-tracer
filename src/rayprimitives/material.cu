@@ -14,6 +14,13 @@ rmath::Vec4<float> illuminate(const rmath::Ray<float>& org_ray, const Isect& ise
         rmath::Vec4<float> incoming_light = light->shine(org_ray.at(isect.time), dir_to_light, s);
         
         // diffuse component
+        rmath::Vec4<float> diffuse_col{};
+        if (isect.shading->is_degenerate()) {
+            diffuse_col = isect.mat->get_Kd();
+        } else {
+            // TODO: implement texture mapping
+        }
+
         float norm_dot = max(rmath::dot(dir_to_light, isect.norm), 0.0f);
         rmath::Vec4<float> diffuse = norm_dot * isect.mat->get_Kd();
         
