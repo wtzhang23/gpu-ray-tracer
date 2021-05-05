@@ -140,32 +140,35 @@ renv::Scene* generate(std::string config_path) {
     if (document.HasMember("amplitude")) {
         amplitude = (float) document["amplitude"].GetDouble();
     }
-    procedural::Perlin perlin{seed, (grid_size + 4) / 5};
-    perlin.set_amplitude(amplitude);
     std::vector<float> last_heights{};
     for (int i = 0; i < grid_size * grid_size; i++) {
         last_heights.push_back(0.0f);
     }
-    perlin.set_period(grid_size);
     float max_height = 0.0f;
     for (int c = 0; c < n_cubes; c++) {
+        procedural::Perlin perlin{seed, (grid_size + 4) / 5};
+        perlin.set_amplitude(amplitude);
+        perlin.set_period(grid_size);
         rtracer::MeshBuilder& mesh_builder = scene_builder.get_mesh_builder(c);
         for (int i = 0; i < grid_size; i++) {
             for (int j = 0; j < grid_size; j++) {
                 float x = i - grid_size / 2.0f;
                 float z = j - grid_size / 2.0f;
-                float y_off = 0.5f * (perlin.sample(i, j, 0.0f) + amplitude);
-                float y = last_heights[i * grid_size + j] + y_off;
-                max_height = std::max(max_height, y);
-                last_heights[i * grid_size + j] += y + 1;
-                int tid = scene_builder.add_trans(mesh_builder);
-                scene_builder.get_transformation(tid).set_position({x, y, z});
+                float y_off = floor(0.5f * (perlin.sample(i, j, 0.0f) + amplitude)) + 1;
+                for (int d = 0; d < y_off; d++) {
+                    float y = last_heights[i * grid_size + j] + d;
+                    int tid = scene_builder.add_trans(mesh_builder);
+                    scene_builder.get_transformation(tid).set_position({x, y, z});
+                }
+                last_heights[i * grid_size + j] += y_off;
+                max_height = std::max(max_height, last_heights[i * grid_size + j]);
             }
         }
+        procedural::Perlin::free(perlin);
     }
-    procedural::Perlin::free(perlin);
 
-    cam.set_position({0.0f, max_height + 5.0f, 0.0f});
+    cam.set_position({0.0f, max_height + 10.0f, -(float) grid_size / 2});
+    cam.set_orientation(rmath::Quat<float>({1.0f, 0.0f, 0.0f}, 45));
     renv::Scene* scene = scene_builder.build_scene(canvas, cam);
     if (document.HasMember("ambience")) {
         scene->set_ambience(read_vec4(document["ambience"]));

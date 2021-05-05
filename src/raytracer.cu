@@ -12,8 +12,6 @@
 #include "rayprimitives/hitable.cuh"
 
 namespace rtracer {
-constexpr int SQ_WIDTH = 22;
-
 __global__
 void trace(renv::Scene* scene) {
     renv::Canvas& canvas = scene->get_canvas();
@@ -94,17 +92,22 @@ void debug_cast(renv::Scene* scene, int x, int y) {
     ropt::BVH::free(bvh);
 }
 
-void update_scene(renv::Scene* scene) {
-    ropt::BVH bvh = update_bvh(scene);
-    scene->set_bvh(bvh);
-    dim3 dimBlock(SQ_WIDTH, SQ_WIDTH);
-    int grid_dim_x = scene->get_canvas().get_width() / SQ_WIDTH;
-    int grid_dim_y = scene->get_canvas().get_height() / SQ_WIDTH;
+void update_scene(renv::Scene* scene, int kernel_dim, bool optimize) {
+    ropt::BVH bvh;
+    if (optimize) {
+        bvh = update_bvh(scene);
+        scene->set_bvh(bvh);
+    }
+    dim3 dimBlock(kernel_dim, kernel_dim);
+    int grid_dim_x = scene->get_canvas().get_width() / kernel_dim;
+    int grid_dim_y = scene->get_canvas().get_height() / kernel_dim;
     dim3 dimGrid(grid_dim_x == 0 ? 1 : grid_dim_x, grid_dim_y == 0 ? 1 : grid_dim_y);
     trace<<<dimGrid, dimBlock>>>(scene);
     int rv = cudaDeviceSynchronize();
     assert(rv == 0);
     scene->set_bvh(ropt::BVH{}); // unset for safety reasons
-    ropt::BVH::free(bvh);
+    if (optimize) {
+        ropt::BVH::free(bvh);
+    }
 }
 }

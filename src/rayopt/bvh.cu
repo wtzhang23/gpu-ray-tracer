@@ -14,42 +14,53 @@ void gen_numbers(int* arr, int n) {
     }
 }
 
-__device__ volatile const unsigned int masks[] = {
-    0x030000FF, 
-    0x0300F00F, 
-    0x030C30C3, 
-    0x00FF00FF
-};
-
-__device__ volatile const unsigned int shifts[] = {
-    16,
-    8,
-    4,
-    2
-};
-
-__device__
-unsigned int expandBits(unsigned int* val) {
-    unsigned int a = *val;
-    a = (a | (a << shifts[0])) & masks[0];
-    a = (a | (a << shifts[1])) & masks[1];
-    a = (a | (a << shifts[2])) & masks[2];
-    a = (a | (a << shifts[3])) & masks[3];
-    return a;
+__host__ __device__
+unsigned long z_order(rmath::Vec3<float> vec) {
+    auto inv = -vec;
+    unsigned int x = *((unsigned int*) &inv[0]), 
+                  y = *((unsigned int*) &inv[1]), 
+                  z = *((unsigned int*) &inv[2]); // negative to make positive numbers have a larger morton code than negative numbers
+    unsigned int x_offset = 31, y_offset = 31, z_offset = 31;
+    unsigned long t = 0;
+    for (unsigned int i = 0; i < 64; i++) {
+        t <<= 1;
+        switch (i % 3) {
+            case 0: {
+                // handle x
+                assert(x_offset >= 0);
+                t |= (x >> x_offset) & 0b1;
+                x_offset--;
+                break;
+            }
+            case 1: {
+                // handle y
+                assert(y_offset >= 0);
+                t |= (y >> y_offset) & 0b1;
+                y_offset--;
+                break;
+            }
+            case 2: {
+                // handle z
+                assert(z_offset >= 0);
+                t |= (z >> z_offset) & 0b1;
+                z_offset--;
+                break;
+            }
+        }
+    }
+    return t;
 }
 
 __global__
-void gen_morton(unsigned int* codes, BoundingBox* boxes, int n) {
+void gen_morton(unsigned long* codes, BoundingBox* boxes, int n) {
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
     int stride = blockDim.x * gridDim.x;
     for (int i = idx; i < n; i += stride) {
         if (boxes[i].is_degenerate()) {
-            codes[i] = UINT_MAX;
+            codes[i] = ULONG_MAX;
         } else {
             rmath::Vec3<float> center = -boxes[i].center(); // negate since first bit indicates pos/neg
-            codes[i] = expandBits((unsigned int*) &center[0]) 
-                            | (expandBits((unsigned int*) &center[1]) << 1) 
-                            | (expandBits((unsigned int*) &center[2]) << 2);
+            codes[i] = z_order(center);
         }
     }
 }
@@ -71,6 +82,7 @@ void build_bvh_layer(BoundingBox* boxes, int batch_size) {
         int offset = idx * batch_size;
         int next_offset = offset >> 1;
         int next_addr = blockDim.x * gridDim.x * batch_size;
+        assert(offset < next_addr);
         BoundingBox* to = &from[next_addr];
         for (int i = 0; i < (batch_size >> 1); i++) {
             BoundingBox left = from[offset + 2 * i];
@@ -86,7 +98,7 @@ const int BVH_THREADS = 512;
 __host__
 void build_bvh(BoundingBox* flattened_tree, int n_boxes) {
     if (n_boxes >= BVH_THREADS * 2) {
-        int n_blocks = n_boxes / BVH_THREADS;
+        int n_blocks = n_boxes / (2 * BVH_THREADS);
         build_bvh_layer<<<n_blocks, BVH_THREADS>>>(flattened_tree, 2); // reduce one layer
         build_bvh(flattened_tree + (n_blocks * BVH_THREADS * 2), n_boxes / 2);
     } else {
@@ -95,11 +107,11 @@ void build_bvh(BoundingBox* flattened_tree, int n_boxes) {
 }
 BVH::BVH(BoundingBox* org_boxes, int n_org_objs): n_objs(n_org_objs) {
     int n_blocks = (n_org_objs + BVH_THREADS - 1) / BVH_THREADS;
-    unsigned int* codes;
+    unsigned long* codes;
     BoundingBox* flattened_tree;
     int rv = cudaMalloc(&ordering, n_org_objs * sizeof(int));
     assert(rv == 0);
-    rv = cudaMalloc(&codes, n_org_objs * sizeof(rmath::Vec3<float>));
+    rv = cudaMalloc(&codes, n_org_objs * sizeof(unsigned long));
     assert(rv == 0);
     rv = cudaMalloc(&flattened_tree, 2 * n_org_objs * sizeof(BoundingBox));
     assert(rv == 0);

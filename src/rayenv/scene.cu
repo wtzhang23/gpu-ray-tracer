@@ -42,6 +42,10 @@ bool cast_ray(Scene* scene, const rmath::Ray<float>& r, rprimitives::Isect& isec
             }
             iter.next(INFINITY);
         }
+        if (scene->is_debugging()) {
+            printf("tested %d / %d bounding boxes for %d objs\n", 
+                    iter.n_intersections(), iter.max_intersections(), scene->n_trans());
+        }
     }
     return hit;
 }
@@ -76,6 +80,9 @@ rmath::Vec4<float> propagate_ray(Scene* scene, const rmath::Ray<float>& r, rprim
         switch (top.type) {
             case FrameType::NORMAL: {
                 isect.time = INFINITY; // reset
+                if (scene->is_debugging()) {
+                    printf("shooting a ray\n");
+                }
                 if (cast_ray(scene, top.ray, isect)) {
                     acc_col += top.atten * rprimitives::illuminate(top.ray, isect, scene);
                     if (top.depth > 0) {
@@ -103,6 +110,9 @@ rmath::Vec4<float> propagate_ray(Scene* scene, const rmath::Ray<float>& r, rprim
                 rmath::Vec4<float> kr = isect.mat->get_Kr();
                 frames[stack_top].type = FrameType::REFRACT;
                 if (kr[0] > 0.0f || kr[1] > 0.0f || kr[2] > 0.0f || kr[3] > 0.0f) {
+                    if (scene->is_debugging()) {
+                        printf("preparing to shoot a reflection ray\n");
+                    }
                     stack_top++;
                     RayFrame& new_top = frames[stack_top];
                     new_top.type = FrameType::NORMAL;
@@ -118,6 +128,9 @@ rmath::Vec4<float> propagate_ray(Scene* scene, const rmath::Ray<float>& r, rprim
             case FrameType::REFRACT: {
                 rmath::Vec4<float> kt = isect.mat->get_Kt();
                 if (kt[0] > 0.0f || kt[1] > 0.0f || kt[2] > 0.0f || kt[3] > 0.0f) {
+                    if (scene->is_debugging()) {
+                        printf("preparing to shoot a refraction ray\n");
+                    }
                     top.type = FrameType::NORMAL;
                     bool tir;
                     rmath::Vec3<float> refract_dir = rmath::refract(top.ray.direction(), top.norm, 

@@ -9,7 +9,7 @@ endif()
 add_subdirectory(src)
 add_executable(RayTracer ${src})
 target_compile_features(RayTracer PUBLIC cxx_std_11)
-target_include_directories(RayTracer PUBLIC include)
+target_include_directories(RayTracer PUBLIC include PUBLIC lib)
 set_target_properties(RayTracer PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 set_target_properties(RayTracer PROPERTIES POSITION_INDEPENDENT_CODE ON)
 

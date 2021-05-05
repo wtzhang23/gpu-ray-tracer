@@ -12,6 +12,11 @@ rmath::Vec4<float> Light::attenuate(const rmath::Ray<float>& to_light, float max
     while (true) {
         float time = INFINITY;
         rprimitives::Isect shadow_isect{time};
+
+        if (scene->is_debugging()) {
+            printf("shooting shadow ray\n");
+        }
+
         if (renv::cast_ray(scene, cur_shadow, shadow_isect)) {
             if (shadow_isect.time > max_t) {
                 return rv;
@@ -19,12 +24,12 @@ rmath::Vec4<float> Light::attenuate(const rmath::Ray<float>& to_light, float max
 
             // norm and shadow ray in same direction implies on inside of object
             if (rmath::dot(shadow_isect.norm, cur_shadow.direction()) > 0) {
-                //if (scene->is_debugging()) {
-                //    printf("time: %f\nto_light_origin: (%f, %f, %f)\ncur_shadow_origin(%f, %f, %f)\ndir: (%f, %f, %f)\n", 
-                //            shadow_isect.time, to_light.origin()[0], to_light.origin()[1], to_light.origin()[2],
-                //            cur_shadow.origin()[0], cur_shadow.origin()[1], cur_shadow.origin()[2],
-                //            cur_shadow.direction()[0], cur_shadow.direction()[1], cur_shadow.direction()[2]);
-                //}
+                if (scene->is_debugging()) {
+                    printf("time: %f\nto_light_origin: (%f, %f, %f)\ncur_shadow_origin(%f, %f, %f)\ndir: (%f, %f, %f)\n", 
+                            shadow_isect.time, to_light.origin()[0], to_light.origin()[1], to_light.origin()[2],
+                            cur_shadow.origin()[0], cur_shadow.origin()[1], cur_shadow.origin()[2],
+                            cur_shadow.direction()[0], cur_shadow.direction()[1], cur_shadow.direction()[2]);
+                }
                 const rmath::Vec4<float>& kt = shadow_isect.mat->get_Kt();
                 if (kt[0] == 0 && kt[1] == 0 && kt[2] == 0 && kt[3] == 0) {
                     return rmath::Vec4<float>();

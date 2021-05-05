@@ -83,6 +83,11 @@ public:
     int n_intersections() const {
         return n_int;
     }
+
+    CUDA_HOSTDEV
+    int max_intersections() const {
+        return bvh.n_objs * 2 - 1;
+    }
 };
 }
 

@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iostream>
 #include <cuda.h>
+#include <cxxopts.hpp>
 #include "raytracer.h"
 #include "rayenv/canvas.h"
 #include "raymath/geometry.h"
@@ -16,16 +17,40 @@ static const int HEIGHT = 480;
 static const float MOVE_SPEED = 0.2f;
 static const float ROT_SPEED = 0.01f;
 static const int SAMPLE_PERIOD = 5;
-static const char* CONFIG_PATH = "./config.json";
 static const char* FONT_PATH = "./assets/arial.ttf";
 static const int FONT_SIZE = 12;
 static const SDL_Color FOREGROUND_TXT_COL = {255, 255, 255, 255};
 static const SDL_Color BACKGROUND_TXT_COL = {0, 0, 0, 0};
+static const char* DEFAULT_KERNEL_DIM = "16";
+
+void open_window(renv::Scene* scene, int kernel_dim, bool disable_opt);
+void bench(renv::Scene* scene, int kernel_dim, bool disable_opt);
 
 int main(int argc, const char** argv) {
+    cxxopts::Options options("Ray Tracer", "A gpu-accelerated ray tracer.");
+    options.add_options()
+        ("c,config", "Configuration file (json)", cxxopts::value<std::string>())
+        ("b,bench", "Benchmark mode", cxxopts::value<bool>()->default_value("false"))
+        ("r,unoptimize", "Disable optimizing data structures", cxxopts::value<bool>()->default_value("false"))
+        ("d,dim", "Kernel dimension", cxxopts::value<int>()->default_value(DEFAULT_KERNEL_DIM));
+    auto opt_res = options.parse(argc, argv);
+    std::string config_path = opt_res["config"].as<std::string>();
+    int kernel_dim = opt_res["dim"].as<int>();
+    bool b = opt_res["bench"].as<bool>();
+    bool r = opt_res["unoptimize"].as<bool>();
+
     // build scene
-    renv::Scene* scene = procedural::generate(CONFIG_PATH);
+    renv::Scene* scene = procedural::generate(config_path);
     std::cout << "Loaded scene" << std::endl;
+    if (b) {
+        bench(scene, kernel_dim, r);
+    } else {
+        open_window(scene, kernel_dim, r);
+    }
+    return 0;
+}
+
+void open_window(renv::Scene* scene, int kernel_dim, bool unoptimize) {
     // initialize window
     SDL_Init(SDL_INIT_VIDEO);
     TTF_Init();
@@ -36,8 +61,9 @@ int main(int argc, const char** argv) {
     SDL_Surface* surface = NULL;
     scene->get_canvas().get_surface(&surface); // link scene near plane to screen
     assert(surface != NULL);
+    
     TTF_Font* font = TTF_OpenFont(FONT_PATH, FONT_SIZE);
-    // trap mouse
+    bool draw_txt = false;
     bool mouse_trapped = false;
     SDL_SetRelativeMouseMode(SDL_FALSE);
     SDL_ShowCursor(SDL_ENABLE);
@@ -45,7 +71,7 @@ int main(int argc, const char** argv) {
     while (running) {
         // create txt
         std::stringstream msg{};
-        msg << "FPS: " << fps;
+        msg << "FPS: " << fps << " Locked: " << mouse_trapped;
         SDL_Surface* text_surface = TTF_RenderText_Shaded(font, msg.str().c_str(), FOREGROUND_TXT_COL, BACKGROUND_TXT_COL);
 
         auto from = std::chrono::high_resolution_clock::now();
@@ -63,17 +89,24 @@ int main(int argc, const char** argv) {
                         break;
                     }
                     case SDL_KEYUP: {
-                        if (event.key.keysym.sym == SDLK_ESCAPE) {
-                            if (mouse_trapped) {
-                                SDL_SetRelativeMouseMode(SDL_FALSE);
-                                SDL_ShowCursor(SDL_ENABLE);
-                            } else {
-                                SDL_SetRelativeMouseMode(SDL_TRUE);
-                                SDL_ShowCursor(SDL_DISABLE);
+                        switch (event.key.keysym.sym) {
+                            case SDLK_ESCAPE: {
+                                if (mouse_trapped) {
+                                    SDL_SetRelativeMouseMode(SDL_FALSE);
+                                    SDL_ShowCursor(SDL_ENABLE);
+                                } else {
+                                    SDL_SetRelativeMouseMode(SDL_TRUE);
+                                    SDL_ShowCursor(SDL_DISABLE);
+                                }
+                                mouse_trapped = !mouse_trapped;
+                                break;
                             }
-
-                            mouse_trapped = !mouse_trapped;
+                            case SDLK_F1: {
+                                draw_txt = !draw_txt;
+                                break;
+                            }
                         }
+                        break;
                     }
                     case SDL_KEYDOWN: {
                         if (mouse_trapped) {
@@ -125,9 +158,11 @@ int main(int argc, const char** argv) {
                 }
             }
             SDL_FillRect(screen, NULL, 0x0);
-            rtracer::update_scene(scene);
+            rtracer::update_scene(scene, kernel_dim, !unoptimize);
             SDL_BlitSurface(surface, NULL, screen, NULL);
-            SDL_BlitSurface(text_surface, NULL, screen, NULL);
+            if (draw_txt) {
+                SDL_BlitSurface(text_surface, NULL, screen, NULL);
+            }
             SDL_UpdateWindowSurface(window);
         }
         auto to = std::chrono::high_resolution_clock::now();
@@ -140,5 +175,12 @@ int main(int argc, const char** argv) {
     TTF_CloseFont(font);
     TTF_Quit();
     SDL_Quit();
-    return 0;
+}
+
+void bench(renv::Scene* scene, int kernel_dim, bool unoptimize) {
+    auto from = std::chrono::high_resolution_clock::now();
+    rtracer::update_scene(scene, kernel_dim, !unoptimize);
+    auto to = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = to - from;
+    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count() << " ms" << std::endl;
 }
