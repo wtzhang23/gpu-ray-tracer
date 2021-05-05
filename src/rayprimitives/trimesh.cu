@@ -1,8 +1,5 @@
+#include "rayenv/scene.h"
 #include "rayprimitives/trimesh.cuh"
-#include "rayprimitives/texture.cuh"
-#include "rayprimitives/hitable.cuh"
-#include "rayprimitives/vertex_buffer.h"
-#include "gputils/alloc.h"
 #include <iostream>
 
 namespace rprimitives {
@@ -14,6 +11,19 @@ bool Trimesh::hit_local(const rmath::Ray<float>& local_ray, renv::Scene* scene, 
         hit |= triangles[i].tri_hit(local_ray, scene, isect);
     }
     return hit;
+}
+
+__device__
+ropt::BoundingBox Trimesh::compute_bounding_box(renv::Scene* scene) {
+    ropt::BoundingBox rv{};
+    for (int i = 0; i < n_triangles; i++) {
+        TriInner& tri = triangles[i];
+        for (int j = 0; j < 3; j++) {
+            rmath::Vec3<float> v = tri.get_vertex(j, scene->get_vertex_buffer());
+            rv.fit_vertex(v);
+        }
+    }
+    return ropt::from_local(rv, *this);
 }
 
 __device__

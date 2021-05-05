@@ -2,6 +2,8 @@
 #include "rayenv/scene.cuh"
 #include "rayprimitives/material.h"
 #include "rayprimitives/material.cuh"
+#include "rayopt/bounding_box.h"
+
 namespace renv {
 static const int MAX_DEPTH = 10;
 
@@ -9,7 +11,6 @@ __device__
 bool cast_local(Scene* scene, const rmath::Ray<float>& r, rprimitives::Isect& isect, const Transformation& t) {
     rprimitives::Hitable** hitables = scene->get_hitables();
     rprimitives::Hitable* h = hitables[t.get_hitable_idx()];
-    
     rmath::Vec3<float> local_dir = t.vec_to_local(r.direction());
     float dir_len = local_dir.len();
     rmath::Ray<float> local_ray = rmath::Ray<float>({t.point_to_local(r.origin()), local_dir});
@@ -26,16 +27,27 @@ bool cast_ray(Scene* scene, const rmath::Ray<float>& r, rprimitives::Isect& isec
     // TODO: use bvh tree
     Transformation* trans = scene->get_trans();
     bool hit = false;
-    for (int i = 0; i < scene->n_trans(); i++) {
-        const Transformation& t = trans[i];
-        hit |= cast_local(scene, r, isect, t);
+    const ropt::BVH& bvh = scene->get_bvh();
+    if (bvh.empty()) {
+        for (int i = 0; i < scene->n_trans(); i++) {
+            const Transformation& t = trans[i];
+            hit |= cast_local(scene, r, isect, t);
+        }
+    } else {
+        ropt::BVHIterator iter{r, INFINITY, scene};
+        while (iter.current() >= 0) {
+            const Transformation& t = trans[iter.current()];
+            if (cast_local(scene, r, isect, t)) {
+                hit = true;
+            }
+            iter.next(INFINITY);
+        }
     }
     return hit;
 }
 
 __device__
-rmath::Vec4<float> propagate_ray(Scene* scene, const rmath::Ray<float>& r) {
-    rprimitives::Isect isect;
+rmath::Vec4<float> propagate_ray(Scene* scene, const rmath::Ray<float>& r, rprimitives::Isect& isect) {
     enum FrameType {
         NORMAL,
         REFLECT,
@@ -63,6 +75,7 @@ rmath::Vec4<float> propagate_ray(Scene* scene, const rmath::Ray<float>& r) {
         RayFrame& top = frames[stack_top];
         switch (top.type) {
             case FrameType::NORMAL: {
+                isect.time = INFINITY; // reset
                 if (cast_ray(scene, top.ray, isect)) {
                     acc_col += top.atten * rprimitives::illuminate(top.ray, isect, scene);
                     if (top.depth > 0) {

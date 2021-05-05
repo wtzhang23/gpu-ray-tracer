@@ -1,6 +1,8 @@
 #include "rayprimitives/light.cuh"
 #include "rayenv/scene.h"
 #include "rayenv/scene.cuh"
+#include "rayprimitives/hitable.cuh"
+#include "rayprimitives/material.h"
 
 namespace rprimitives {
 __device__
@@ -8,7 +10,8 @@ rmath::Vec4<float> Light::attenuate(const rmath::Ray<float>& to_light, float max
     rmath::Vec4<float> rv = color;
     rmath::Ray<float> cur_shadow = rmath::Ray<float>(to_light.at(rmath::THRESHOLD), to_light.direction());
     while (true) {
-        rprimitives::Isect shadow_isect{};
+        float time = INFINITY;
+        rprimitives::Isect shadow_isect{time};
         if (renv::cast_ray(scene, cur_shadow, shadow_isect)) {
             if (shadow_isect.time > max_t) {
                 return rv;
@@ -23,6 +26,9 @@ rmath::Vec4<float> Light::attenuate(const rmath::Ray<float>& to_light, float max
                 //            cur_shadow.direction()[0], cur_shadow.direction()[1], cur_shadow.direction()[2]);
                 //}
                 const rmath::Vec4<float>& kt = shadow_isect.mat->get_Kt();
+                if (kt[0] == 0 && kt[1] == 0 && kt[2] == 0 && kt[3] == 0) {
+                    return rmath::Vec4<float>();
+                }
                 float atten_r = pow(kt[0], shadow_isect.time);
                 float atten_g = pow(kt[1], shadow_isect.time);
                 float atten_b = pow(kt[2], shadow_isect.time);

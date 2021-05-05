@@ -1,14 +1,18 @@
 #ifndef TRIMESH_CUH
 #define TRIMESH_CUH
 
-#include "rayprimitives/entity.h"
 #include "raymath/linear.h"
+#include "raymath/geometry.h"
 #include "rayprimitives/material.h"
-#include "rayprimitives/texture.h"
 #include "rayprimitives/entity.h"
 #include "rayprimitives/hitable.cuh"
-#include "rayenv/scene.h"
+#include "rayprimitives/texture.h"
+#include "rayprimitives/vertex_buffer.h"
 #include "gputils/alloc.h"
+
+namespace renv {
+class Scene;
+}
 
 namespace rprimitives {
 class TriInner {
@@ -52,6 +56,9 @@ public:
     
     __device__
     bool hit_local(const rmath::Ray<float>& local_ray, renv::Scene* scene, Isect& isect) override;
+
+    __device__
+    ropt::BoundingBox compute_bounding_box(renv::Scene* scene) override;
 
     __host__ __device__
     ~Trimesh() override {}

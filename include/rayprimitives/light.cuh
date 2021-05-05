@@ -1,7 +1,11 @@
 #ifndef LIGHT_CUH
 #define LIGHT_CUH
 #include "raymath/linear.h"
-#include "rayenv/scene.h"
+#include "raymath/geometry.h"
+
+namespace renv {
+class Scene;
+}
 
 namespace rprimitives {
 class Light {

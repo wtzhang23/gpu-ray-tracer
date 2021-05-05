@@ -2,7 +2,6 @@
 #define MATERIAL_H
 
 #include "raymath/linear.h"
-#include "rayprimitives/texture.h"
 #include <iostream>
 
 #ifdef __CUDACC__

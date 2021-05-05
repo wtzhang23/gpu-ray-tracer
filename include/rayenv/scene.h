@@ -5,6 +5,7 @@
 #include "raymath/linear.h"
 #include "raymath/geometry.h"
 #include "rayenv/canvas.h"
+#include "rayopt/bvh.h"
 #include "rayprimitives/entity.h"
 #include "rayprimitives/texture.h"
 #include "rayprimitives/vertex_buffer.h"
@@ -91,6 +92,7 @@ private:
     rmath::Vec3<float> dist_atten;
     rmath::Vec4<float> ambience;
     rprimitives::VertexBuffer buffer;
+    ropt::BVH bvh;
     int nh;
     int nl;
     int nt;
@@ -103,7 +105,7 @@ public:
                 Transformation* trans, int n_trans,
                 rprimitives::VertexBuffer buffer): canvas(canvas), cam(camera),
                 atlas(atlas), hitables(hitables), lights(lights), trans(trans),
-                dist_atten(), ambience(), buffer(buffer), nh(n_hitables), 
+                dist_atten(), ambience(), buffer(buffer), bvh(), nh(n_hitables), 
                 nl(n_lights), nt(n_trans), recurse_depth(0), debugging(false) {}
 
     void set_dist_atten(float const_term, float linear_term, float quad_term) {
@@ -120,6 +122,15 @@ public:
 
     void set_debug_mode(bool mode) {
         debugging = mode;
+    }
+
+    void set_bvh(ropt::BVH bvh) {
+        this->bvh = bvh;
+    }
+
+    CUDA_HOSTDEV
+    const ropt::BVH& get_bvh() const {
+        return bvh;
     }
 
     CUDA_HOSTDEV

@@ -1,9 +1,11 @@
 include(FindPkgConfig)
 
-set(CMAKE_BUILD_TYPE Debug)
 cmake_minimum_required(VERSION 3.10)
 configure_file(include/config.h.in include/config.h)
 project(RayTracer VERSION 1.0 LANGUAGES CXX CUDA)
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
 add_subdirectory(src)
 add_executable(RayTracer ${src})
 target_compile_features(RayTracer PUBLIC cxx_std_11)

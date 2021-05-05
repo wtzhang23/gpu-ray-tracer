@@ -1,20 +1,23 @@
 #include <rapidjson/document.h>
 #include <rapidjson/istreamwrapper.h>
 #include <fstream>
-#include "cube_world.h"
+#include "procedural/cube_world.h"
+#include "procedural/perlin.h"
 #include "rayenv/scene.h"
 #include "rayenv/canvas.h"
 #include "raymath/geometry.h"
 #include "raymath/linear.h"
 #include "scene_builder.h"
 
-namespace cube_world {
+namespace procedural {
 
 const int DEFAULT_SEED = 42;
+const int DEFAULT_GRID_SIZE = 8;
 const int DEFAULT_WIDTH = 640;
 const int DEFAULT_HEIGHT = 480;
 const float DEFAULT_FOV = M_PI / 4;
 const float DEFAULT_UNIT_LEN = 200;
+const float DEFAULT_AMPLITUDE = 1.0f;
 
 renv::Scene* generate(std::string config_path) {
     std::ifstream ifs(config_path.c_str());
@@ -23,11 +26,15 @@ renv::Scene* generate(std::string config_path) {
     document.ParseStream(isw);
     
     int seed = DEFAULT_SEED;
+    int grid_size = DEFAULT_GRID_SIZE;
     int width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT;
     float fov = DEFAULT_FOV;
     float unit_length = DEFAULT_UNIT_LEN;
     if (document.HasMember("seed")) {
         seed = document["seed"].GetInt();
+    }
+    if (document.HasMember("grid_size")) {
+        grid_size = document["grid_size"].GetInt();
     }
     if (document.HasMember("width")) {
         width = document["width"].GetInt();
@@ -58,7 +65,6 @@ renv::Scene* generate(std::string config_path) {
     rtracer::SceneBuilder scene_builder{atlas};
 
     // build cubes
-    std::vector<rtracer::MeshBuilder*> cubes{};
     int n_cubes = 0;
     if (document.HasMember("cubes")) {
         const rapidjson::Value& cubes_obj = document["cubes"];
@@ -98,11 +104,10 @@ renv::Scene* generate(std::string config_path) {
                 mat.set_eta((float) cube["eta"].GetDouble());
             }
 
-            rtracer::MeshBuilder& mesh_builder = scene_builder.build_cube(.9f,
+            scene_builder.build_cube(.999f,
                 shading,
                 mat
             );
-            cubes.push_back(&mesh_builder);
         }
     }
 
@@ -129,10 +134,38 @@ renv::Scene* generate(std::string config_path) {
             }
         }
     }
-    renv::Transformation& trans1 = scene_builder.add_trans(*cubes[0]);
-    trans1.set_position({0.0f, 0.0f, 5.0f});
-    renv::Transformation& trans2 = scene_builder.add_trans(*cubes[0]);
-    trans2.set_position({0.0f, 1.0f, 4.5f});
+
+    // build cube world
+    float amplitude = DEFAULT_AMPLITUDE;
+    if (document.HasMember("amplitude")) {
+        amplitude = (float) document["amplitude"].GetDouble();
+    }
+    procedural::Perlin perlin{seed, (grid_size + 4) / 5};
+    perlin.set_amplitude(amplitude);
+    std::vector<float> last_heights{};
+    for (int i = 0; i < grid_size * grid_size; i++) {
+        last_heights.push_back(0.0f);
+    }
+    perlin.set_period(grid_size);
+    float max_height = 0.0f;
+    for (int c = 0; c < n_cubes; c++) {
+        rtracer::MeshBuilder& mesh_builder = scene_builder.get_mesh_builder(c);
+        for (int i = 0; i < grid_size; i++) {
+            for (int j = 0; j < grid_size; j++) {
+                float x = i - grid_size / 2.0f;
+                float z = j - grid_size / 2.0f;
+                float y_off = 0.5f * (perlin.sample(i, j, 0.0f) + amplitude);
+                float y = last_heights[i * grid_size + j] + y_off;
+                max_height = std::max(max_height, y);
+                last_heights[i * grid_size + j] += y + 1;
+                int tid = scene_builder.add_trans(mesh_builder);
+                scene_builder.get_transformation(tid).set_position({x, y, z});
+            }
+        }
+    }
+    procedural::Perlin::free(perlin);
+
+    cam.set_position({0.0f, max_height + 5.0f, 0.0f});
     renv::Scene* scene = scene_builder.build_scene(canvas, cam);
     if (document.HasMember("ambience")) {
         scene->set_ambience(read_vec4(document["ambience"]));

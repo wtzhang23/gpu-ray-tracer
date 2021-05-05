@@ -3,7 +3,10 @@
 
 #include "rayprimitives/material.h"
 #include "rayprimitives/hitable.cuh"
-#include "rayenv/scene.h"
+
+namespace renv {
+class Scene;
+}
 
 namespace rprimitives {
 

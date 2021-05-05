@@ -22,6 +22,8 @@ private:
 public:
     Perlin(int seed, int n_sample_vecs);
 
+    static void free(Perlin& p);
+
     void set_amplitude(float a) {
         amplitude = a;
     }

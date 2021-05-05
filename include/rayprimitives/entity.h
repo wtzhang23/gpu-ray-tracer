@@ -5,8 +5,6 @@
 #include <cuda_runtime.h>
 #include "raymath/linear.h"
 #include "raymath/geometry.h"
-#include "rayprimitives/material.h"
-#include "rayprimitives/texture.h"
 
 #ifdef __CUDACC__
 #define CUDA_HOSTDEV __host__ __device__

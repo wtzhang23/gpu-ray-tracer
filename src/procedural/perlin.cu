@@ -11,10 +11,14 @@ float interpolate(float a, float b, float w) {
 
 CUDA_HOSTDEV
 const rmath::Vec3<float>& Perlin::hash(int x, int y, int z) const {
-    int hash = permutation[
-                    (permutation[
-                        (permutation[x] + y) % n_sample_vecs] 
-                    + z) % n_sample_vecs];
+    int hash_x = x % n_sample_vecs;
+    assert(hash_x >= 0);
+    int hash_xy = (permutation[hash_x] + y) % n_sample_vecs;
+    assert(hash_xy >= 0);
+    int hash_xyz = (permutation[hash_xy] + z) % n_sample_vecs;
+    assert(hash_xyz >= 0);
+    int hash = permutation[hash_xyz];
+    assert(hash < n_sample_vecs);
     return sample_vecs[hash];
 }
 
@@ -28,17 +32,27 @@ struct WeightGenerator {
     const Perlin& p;
 
     CUDA_HOSTDEV
+    static float smoothstep_remap(float delta) {
+        return delta * delta * (3 - 2 * delta);
+    }
+
+    CUDA_HOSTDEV
     WeightGenerator(float x, float y, float z, const Perlin& p): ix((int) floor(x) % p.get_n_sample_vecs()),
-                    iy((int) floor(y) % p.get_n_sample_vecs()), iz((int) floor(z) % p.get_n_sample_vecs()), p(p) {
-        mx = x - ix;
-        my = y - iy;
-        mz = z - iz;
+                    iy((int) floor(y) % p.get_n_sample_vecs()), iz((int) floor(z) % p.get_n_sample_vecs()), p(p),
+                    mx(smoothstep_remap(x - floor(x))), my(smoothstep_remap(y - floor(y))), mz(smoothstep_remap(z - floor(z))) {
+        assert(abs(mx) < rmath::THRESHOLD + 1);
+        assert(abs(my) < rmath::THRESHOLD + 1);
+        assert(abs(mz) < rmath::THRESHOLD + 1);
     }
 
     CUDA_HOSTDEV
     float gen_weight(int dx, int dy, int dz) {
         float cx = ix + dx, cy = iy + dy, cz = iz + dz;
-        return rmath::dot(p.hash(cx, cy, cz), {dx - mx, dy - my, dz - mz});
+        rmath::Vec3<float> offset({dx - mx, dy - my, dz - mz});
+        const rmath::Vec3<float>& wv = p.hash(cx, cy, cz);
+        float w = rmath::dot(wv, offset.normalized());
+        assert (w <= 1 + rmath::THRESHOLD && w >= -1 - rmath::THRESHOLD);
+        return w;
     }
 };
 
@@ -66,7 +80,7 @@ float Perlin::sample(float x, float y, float z) const {
     return amplitude * xyz;
 }
 
-Perlin::Perlin(int seed, int n_sample_vecs): amplitude(1), period(1), n_sample_vecs() {
+Perlin::Perlin(int seed, int n_sample_vecs): amplitude(1.0f), period(1.0f), n_sample_vecs(n_sample_vecs) {
     std::mt19937 generator{seed};
     auto rng = std::bind(std::uniform_real_distribution<float>{}, generator);
     
@@ -75,7 +89,7 @@ Perlin::Perlin(int seed, int n_sample_vecs): amplitude(1), period(1), n_sample_v
     for (int i = 0; i < n_sample_vecs; i++) {
         float theta = acos(2 * rng() - 1);
         float phi = 2 * rng() * M_PI;
-        sample_vecs[i] = {cos(phi) * sin(theta), sin(phi) * sin(theta), cos(theta)};
+        sample_vecs[i] = rmath::Vec3<float>({cos(phi) * sin(theta), sin(phi) * sin(theta), cos(theta)}).normalized();
         permutation[i] = i;
     }
 
@@ -88,4 +102,8 @@ Perlin::Perlin(int seed, int n_sample_vecs): amplitude(1), period(1), n_sample_v
     }
 }
 
+void Perlin::free(Perlin& p) {
+    cudaFree(p.sample_vecs);
+    cudaFree(p.permutation);
+}
 }

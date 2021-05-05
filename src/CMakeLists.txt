@@ -1,7 +1,7 @@
 unset(src PARENT_SCOPE)
 unset(src)
 unset(SUB_SRCS)
-set(SUB_SRCS gputils rayenv rayprimitives procedural)
+set(SUB_SRCS gputils rayenv rayprimitives rayopt procedural)
 
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR} src)
 foreach(dir IN LISTS SUB_SRCS)

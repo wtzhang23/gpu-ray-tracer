@@ -3,23 +3,38 @@
 
 #include "raymath/linear.h"
 #include "raymath/geometry.h"
-#include "rayprimitives/material.h"
-#include "rayprimitives/texture.h"
-#include "rayenv/scene.h"
+#include "rayopt/bounding_box.h"
+#include "rayprimitives/entity.h"
+
+namespace renv {
+class Scene;
+}
 
 namespace rprimitives {
+
+class Shade;
+class Material;
+
 struct Isect {
-    float time;
+    float& time;
     rmath::Vec3<float> norm;
-    Shade* shading;
     rmath::Vec<float, 2> uv;
+    Shade* shading;
     Material* mat;
 
     __device__
-    Isect(): time(INFINITY){}
+    Isect(float& time): time(time){}
 };
 
-class Hitable: public Entity {
+class Boxed {
+public:
+    __device__
+    virtual ropt::BoundingBox compute_bounding_box(renv::Scene* scene) {
+        return ropt::BoundingBox{};
+    }
+};
+
+class Hitable: public Entity, public Boxed {
 public:
     __device__
     Hitable(): Entity() {}
@@ -35,7 +50,7 @@ public:
     
     __device__
     virtual bool hit_local(const rmath::Ray<float>& local_ray, renv::Scene* scene, Isect& isect) {
-        isect = Isect{};
+        isect.time = INFINITY;
         return false;
     };
     

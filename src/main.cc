@@ -3,18 +3,19 @@
 #include <chrono>
 #include <sstream>
 #include <iostream>
+#include <cuda.h>
 #include "raytracer.h"
 #include "rayenv/canvas.h"
 #include "raymath/geometry.h"
 #include "raymath/linear.h"
 #include "rayenv/scene.h"
-#include "cube_world.h"
+#include "procedural/cube_world.h"
 
 static const int WIDTH = 640;
 static const int HEIGHT = 480;
 static const float MOVE_SPEED = 0.2f;
 static const float ROT_SPEED = 0.01f;
-static const int SAMPLE_PERIOD = 50;
+static const int SAMPLE_PERIOD = 5;
 static const char* CONFIG_PATH = "./config.json";
 static const char* FONT_PATH = "./assets/arial.ttf";
 static const int FONT_SIZE = 12;
@@ -23,7 +24,7 @@ static const SDL_Color BACKGROUND_TXT_COL = {0, 0, 0, 0};
 
 int main(int argc, const char** argv) {
     // build scene
-    renv::Scene* scene = cube_world::generate(CONFIG_PATH);
+    renv::Scene* scene = procedural::generate(CONFIG_PATH);
     std::cout << "Loaded scene" << std::endl;
     // initialize window
     SDL_Init(SDL_INIT_VIDEO);
@@ -106,10 +107,10 @@ int main(int argc, const char** argv) {
                         if (mouse_trapped) {
                             SDL_MouseMotionEvent mouse_event = event.motion;
                             renv::Camera& cam = scene->get_camera(); 
-                            rmath::Vec<float, 2> rel_mot = rmath::Vec<float, 2>({(float) mouse_event.xrel, (float) -mouse_event.yrel}).normalized();
+                            rmath::Vec<float, 2> rel_mot = rmath::Vec<float, 2>({(float) mouse_event.xrel, (float) mouse_event.yrel}).normalized();
                             rmath::Vec3<float> global_mot = rel_mot[0] * cam.right().direction() + rel_mot[1] * cam.up().direction();
-                            rmath::Vec3<float> axis = rmath::cross(global_mot, cam.forward().direction()).normalized();
-                            rmath::Quat<float> rot = rmath::Quat<float>(axis, -ROT_SPEED);
+                            rmath::Quat<float> rot = rmath::Quat<float>(cam.up().direction(), ROT_SPEED * rel_mot[0]) 
+                                        * rmath::Quat<float>(cam.right().direction(), ROT_SPEED * rel_mot[1]);
                             cam.rotate(rot);
                         }
                         break;

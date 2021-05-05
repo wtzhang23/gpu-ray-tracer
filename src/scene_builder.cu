@@ -190,7 +190,7 @@ renv::Scene* SceneBuilder::build_scene(renv::Canvas canvas, renv::Camera camera)
     return s;
 }
 
-MeshBuilder& SceneBuilder::build_cube(float scale, rprimitives::Shade shade, rprimitives::Material mat) {
+int SceneBuilder::build_cube(float scale, rprimitives::Shade shade, rprimitives::Material mat) {
     /*   e-----f
      *  /|    /|
      * a-----b |
@@ -215,7 +215,8 @@ MeshBuilder& SceneBuilder::build_cube(float scale, rprimitives::Shade shade, rpr
     rmath::Vec3<float> g = scale * _g;
     rmath::Vec3<float> h = scale * _h;
 
-    MeshBuilder& builder = create_mesh();
+    int builder_idx = create_mesh();
+    MeshBuilder& builder = get_mesh_builder(builder_idx);
     // front
     builder.add_triangle(rmath::Vec3<int>{add_vertex(d), add_vertex(a), add_vertex(b)},
                             shade, mat);
@@ -246,7 +247,7 @@ MeshBuilder& SceneBuilder::build_cube(float scale, rprimitives::Shade shade, rpr
                             shade, mat);
     builder.add_triangle(rmath::Vec3<int>{add_vertex(d), add_vertex(h), add_vertex(g)},
                             shade, mat);
-    return builder;
+    return builder_idx;
 }
 
 }

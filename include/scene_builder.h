@@ -58,22 +58,32 @@ public:
         return add_vertex(rmath::Vec3<float>({x, y, z}));
     }
 
-    MeshBuilder& create_mesh(rmath::Vec3<float> pos, rmath::Quat<float> rot) {
-        int hi = meshes.size();
-        meshes.push_back(MeshBuilder{hi, pos, rot});
-        return meshes.back();
+    MeshBuilder& get_mesh_builder(int idx) {
+        return meshes[idx];
     }
 
-    MeshBuilder& create_mesh() {
+    renv::Transformation& get_transformation(int idx) {
+        return trans[idx];
+    }
+
+    int create_mesh(rmath::Vec3<float> pos, rmath::Quat<float> rot) {
+        int hi = meshes.size();
+        meshes.push_back(MeshBuilder{hi, pos, rot});
+        return hi;
+    }
+
+    int create_mesh() {
         return create_mesh(rmath::Vec3<float>(), rmath::Quat<float>::identity());
     }
 
-    renv::Transformation& add_trans(const MeshBuilder& builder) {
+    int add_trans(const MeshBuilder& builder) {
+        int idx = trans.size();
+        assert(builder.hitable_idx < meshes.size());
         trans.push_back(renv::Transformation{builder.hitable_idx});
-        return trans.back();
+        return idx;
     }
 
-    MeshBuilder& build_cube(float scale, rprimitives::Shade shade, rprimitives::Material mat);
+    int build_cube(float scale, rprimitives::Shade shade, rprimitives::Material mat);
 
     void add_directional_light(rmath::Vec3<float> dir, rmath::Vec4<float> col) {
         dir_light_dir.push_back(dir);
