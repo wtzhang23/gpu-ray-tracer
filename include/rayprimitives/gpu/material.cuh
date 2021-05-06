@@ -1,5 +1,5 @@
-#ifndef MATERIAL_CUH
-#define MATERIAL_CUH
+#ifndef RAYPRIMITIVES_GPU_MATERIAL_CUH
+#define RAYPRIMITIVES_GPU_MATERIAL_CUH
 
 #include "rayprimitives/material.h"
 #include "rayprimitives/gpu/hitable.cuh"

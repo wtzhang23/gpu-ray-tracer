@@ -1,5 +1,5 @@
-#ifndef ENTITY_H
-#define ENTITY_H
+#ifndef RAYPRIMITIVES_ENTITY_H
+#define RAYPRIMITIVES_ENTITY_H
 
 #include <cuda.h>
 #include <cuda_runtime.h>

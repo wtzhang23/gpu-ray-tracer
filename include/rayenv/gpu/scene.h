@@ -1,5 +1,5 @@
-#ifndef SCENE_H
-#define SCENE_H
+#ifndef RAYENV_GPU_SCENE_H
+#define RAYENV_GPU_SCENE_H
 
 #include <vector>
 #include "raymath/linear.h"

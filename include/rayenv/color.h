@@ -1,5 +1,5 @@
-#ifndef COLOR_H
-#define COLOR_H
+#ifndef RAYENV_COLOR_H
+#define RAYENV_COLOR_H
 
 #ifdef __CUDACC__
 #define CUDA_HOSTDEV __host__ __device__

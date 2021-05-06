@@ -1,5 +1,5 @@
-#ifndef TEXTURE_H
-#define TEXTURE_H
+#ifndef RAYPRIMITIVES_GPU_TEXTURE_H
+#define RAYPRIMITIVES_GPU_TEXTURE_H
 
 #include "raymath/linear.h"
 #include "rayenv/color.h"

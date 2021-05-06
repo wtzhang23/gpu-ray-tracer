@@ -1,5 +1,5 @@
-#ifndef PERLIN_H
-#define PERLIN_H
+#ifndef PROCEDURAL_PERLIN_H
+#define PROCEDURAL_PERLIN_H
 
 #include <cmath>
 #include "raymath/linear.h"

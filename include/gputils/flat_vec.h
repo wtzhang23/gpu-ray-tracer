@@ -1,5 +1,5 @@
-#ifndef FLAT_VEC_H
-#define FLAT_VEC_H
+#ifndef GPUTILS_FLAT_VEC_H
+#define GPUTILS_FLAT_VEC_H
 
 #include "gputils/alloc.h"
 #include <array>

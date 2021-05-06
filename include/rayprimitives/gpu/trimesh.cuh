@@ -1,5 +1,5 @@
-#ifndef TRIMESH_CUH
-#define TRIMESH_CUH
+#ifndef RAYPRIMITIVES_GPU_TRIMESH_CUH
+#define RAYPRIMITIVES_GPU_TRIMESH_CUH
 
 #include "raymath/linear.h"
 #include "raymath/geometry.h"

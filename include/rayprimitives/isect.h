@@ -1,5 +1,5 @@
-#ifndef ISECT_H
-#define ISECT_H
+#ifndef RAYPRIMITIVES_ISECT_H
+#define RAYPRIMITIVES_ISECT_H
 
 #ifdef __CUDACC__
 #define CUDA_HOSTDEV __host__ __device__

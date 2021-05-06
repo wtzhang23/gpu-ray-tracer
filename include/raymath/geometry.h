@@ -1,5 +1,5 @@
-#ifndef GEOMETRY_H
-#define GEOMETRY_H
+#ifndef RAYMATH_GEOMETRY_H
+#define RAYMATH_GEOMETRY_H
 
 #ifdef __CUDACC__
 #define CUDA_HOSTDEV __host__ __device__

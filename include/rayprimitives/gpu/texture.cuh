@@ -1,5 +1,5 @@
-#ifndef TEXTURE_CUH
-#define TEXTURE_CUH
+#ifndef RAYPRIMITIVES_GPU_TEXTURE_CUH
+#define RAYPRIMITIVES_GPU_TEXTURE_CUH
 
 namespace rprimitives {
 namespace gpu {

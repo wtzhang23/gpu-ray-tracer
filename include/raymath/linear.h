@@ -1,5 +1,5 @@
-#ifndef LINEAR_H
-#define LINEAR_H
+#ifndef RAYMATH_LINEAR_H
+#define RAYMATH_LINEAR_H
 
 #ifdef __CUDACC__
 #define CUDA_HOSTDEV __host__ __device__

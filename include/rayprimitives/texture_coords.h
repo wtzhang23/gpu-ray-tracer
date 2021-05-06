@@ -1,5 +1,5 @@
-#ifndef TEXTURE_COORDS_H
-#define TEXTURE_COORDS_H
+#ifndef RAYPRIMITIVES_TEXTURE_COORDS_H
+#define RAYPRIMITIVES_TEXTURE_COORDS_H
 
 #ifdef __CUDACC__
 #define CUDA_HOSTDEV __host__ __device__

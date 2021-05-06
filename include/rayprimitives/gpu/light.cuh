@@ -1,5 +1,5 @@
-#ifndef LIGHT_CUH
-#define LIGHT_CUH
+#ifndef RAYPRIMITIVES_GPU_LIGHT_CUH
+#define RAYPRIMITIVES_GPU_LIGHT_CUH
 #include "raymath/linear.h"
 #include "raymath/geometry.h"
 

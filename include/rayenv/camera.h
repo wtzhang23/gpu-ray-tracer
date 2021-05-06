@@ -1,5 +1,5 @@
-#ifndef CAMERA_H
-#define CAMERA_H
+#ifndef RAYENV_CAMERA_H
+#define RAYENV_CAMERA_H
 
 #include "rayprimitives/entity.h"
 

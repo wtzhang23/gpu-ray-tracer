@@ -1,5 +1,5 @@
-#ifndef BOUNDING_BOX_H
-#define BOUNDING_BOX_H
+#ifndef RAYOPT_BOUNDING_BOX_H
+#define RAYOPT_BOUNDING_BOX_H
 
 #include "raymath/linear.h"
 #include "raymath/geometry.h"

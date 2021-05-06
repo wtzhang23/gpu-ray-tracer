@@ -1,5 +1,5 @@
-#ifndef ENVIRONMENT_H
-#define ENVIRONMENT_H
+#ifndef RAYENV_ENVIRONMENT_H
+#define RAYENV_ENVIRONMENT_H
 
 #include "raymath/linear.h"
 #include "raymath/geometry.h"

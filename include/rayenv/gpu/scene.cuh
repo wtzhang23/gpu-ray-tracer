@@ -1,5 +1,5 @@
-#ifndef SCENE_CUH
-#define SCENE_CUH
+#ifndef RAYENV_GPU_SCENE_CUH
+#define RAYENV_GPU_SCENE_CUH
 
 #include "raymath/geometry.h"
 

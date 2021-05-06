@@ -1,5 +1,5 @@
-#ifndef BVH_H
-#define BVH_H
+#ifndef RAYOPT_GPU_BVH_H
+#define RAYOPT_GPU_BVH_H
 
 #include "raymath/linear.h"
 #include "raymath/geometry.h"

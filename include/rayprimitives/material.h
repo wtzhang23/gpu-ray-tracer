@@ -1,5 +1,5 @@
-#ifndef MATERIAL_H
-#define MATERIAL_H
+#ifndef RAYPRIMITIVES_MATERIAL_H
+#define RAYPRIMITIVES_MATERIAL_H
 
 #include "raymath/linear.h"
 #include <iostream>

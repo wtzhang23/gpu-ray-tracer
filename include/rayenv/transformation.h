@@ -1,5 +1,5 @@
-#ifndef TRANSFORMATION_H
-#define TRANSFORMATION_H
+#ifndef RAYENV_TRANSFORMATION_H
+#define RAYENV_TRANSFORMATION_H
 
 #include "rayprimitives/entity.h"
 

@@ -1,0 +1,6 @@
+#ifndef RAYPRIMITIVES_CPU_HITABLE_H
+#define RAYPRIMITIVES_CPU_HITABLE_H
+
+
+
+#endif

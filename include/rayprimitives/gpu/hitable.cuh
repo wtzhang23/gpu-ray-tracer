@@ -1,5 +1,5 @@
-#ifndef HITABLE_CUH
-#define HITABLE_CUH
+#ifndef RAYPRIMITIVES_GPU_HITABLE_CUH
+#define RAYPRIMITIVES_GPU_HITABLE_CUH
 
 #include "raymath/linear.h"
 #include "raymath/geometry.h"

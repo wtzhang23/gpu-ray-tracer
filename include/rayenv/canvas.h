@@ -1,5 +1,5 @@
-#ifndef CANVAS_H
-#define CANVAS_H
+#ifndef RAYENV_CANVAS_H
+#define RAYENV_CANVAS_H
 
 #ifdef __CUDACC__
 #define CUDA_HOSTDEV __host__ __device__

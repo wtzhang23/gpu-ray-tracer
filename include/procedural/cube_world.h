@@ -1,5 +1,5 @@
-#ifndef CUBE_WORLD_H
-#define CUBE_WORLD_H
+#ifndef PROCEDURAL_CUBE_WORLD_H
+#define PROCEDURAL_CUBE_WORLD_H
 
 #include <string>
 

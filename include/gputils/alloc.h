@@ -1,5 +1,5 @@
-#ifndef GPU_ALLOC_H
-#define GPU_ALLOC_H
+#ifndef GPUTILS_ALLOC_H
+#define GPUTILS_ALLOC_H
 
 #ifdef __CUDACC__
 #define CUDA_HOSTDEV __host__ __device__

@@ -1,5 +1,5 @@
-#ifndef VERTEX_BUFFER_H
-#define VERTEX_BUFFER_H
+#ifndef RAYPRIMITIVES_GPU_VERTEX_BUFFER_H
+#define RAYPRIMITIVES_GPU_VERTEX_BUFFER_H
 
 #include <vector>
 #include "gputils/alloc.h"

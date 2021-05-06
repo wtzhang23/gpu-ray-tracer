@@ -1,5 +1,5 @@
-#ifndef ASSETS_H
-#define ASSETS_H
+#ifndef GPUTILS_ASSETS_H
+#define GPUTILS_ASSETS_H
 
 #include "gputils/alloc.h"
 
