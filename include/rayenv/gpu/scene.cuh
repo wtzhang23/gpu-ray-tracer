@@ -6,10 +6,13 @@
 namespace rprimitives {
 class Isect;
 class Transformation;
-class Scene;
 }
 
 namespace renv {
+namespace gpu {
+
+class Scene;
+
 __device__
 bool cast_ray(Scene* scene, const rmath::Ray<float>& r, rprimitives::Isect& isect);
 
@@ -18,6 +21,8 @@ rmath::Vec4<float> propagate_ray(Scene* scene, const rmath::Ray<float>& r, rprim
 
 __device__
 bool cast_local(Scene* scene, const rmath::Ray<float>& r, rprimitives::Isect& isect, const Transformation& t);
+
+}
 }
 
 #endif

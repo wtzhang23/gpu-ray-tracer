@@ -4,15 +4,21 @@
 #include "raymath/geometry.h"
 
 namespace renv {
+namespace gpu {
+
 class Scene;
+
+}
 }
 
 namespace rprimitives {
+namespace gpu {
+
 class Light {
 protected:
     rmath::Vec4<float> color;
     __device__
-    rmath::Vec4<float> attenuate(const rmath::Ray<float>& to_light, float max_t, renv::Scene* scene) const;
+    rmath::Vec4<float> attenuate(const rmath::Ray<float>& to_light, float max_t, renv::gpu::Scene* scene) const;
 public:
     __device__
     Light(): color(rmath::Vec4<float>({1.0f, 1.0f, 1.0f, 1.0f})){}
@@ -23,7 +29,7 @@ public:
     }
 
     __device__
-    virtual rmath::Vec4<float> shine(const rmath::Vec3<float>& hit_pos, rmath::Vec3<float>& dir_to_light, renv::Scene* scene) const {
+    virtual rmath::Vec4<float> shine(const rmath::Vec3<float>& hit_pos, rmath::Vec3<float>& dir_to_light, renv::gpu::Scene* scene) const {
         return rmath::Vec4<float>();
     }
 };
@@ -41,7 +47,7 @@ public:
     }
 
     __device__
-    virtual rmath::Vec4<float> shine(const rmath::Vec3<float>& hit_pos, rmath::Vec3<float>& dir_to_light, renv::Scene* scene) const override;
+    virtual rmath::Vec4<float> shine(const rmath::Vec3<float>& hit_pos, rmath::Vec3<float>& dir_to_light, renv::gpu::Scene* scene) const override;
 };
 
 class DirLight: public Light {
@@ -57,8 +63,10 @@ public:
     }
 
     __device__
-    virtual rmath::Vec4<float> shine(const rmath::Vec3<float>& hit_pos, rmath::Vec3<float>& dir_to_light, renv::Scene* scene) const override;
+    virtual rmath::Vec4<float> shine(const rmath::Vec3<float>& hit_pos, rmath::Vec3<float>& dir_to_light, renv::gpu::Scene* scene) const override;
 };
+
+}
 }
 
 #endif

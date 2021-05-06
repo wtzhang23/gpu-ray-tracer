@@ -1,10 +1,12 @@
-#include "rayenv/scene.h"
-#include "rayprimitives/trimesh.cuh"
+#include "rayenv/gpu/scene.h"
+#include "rayprimitives/gpu/trimesh.cuh"
 #include <iostream>
 
 namespace rprimitives {
+namespace gpu {
+
 __device__
-bool Trimesh::hit_local(const rmath::Ray<float>& local_ray, renv::Scene* scene, Isect& isect) {
+bool Trimesh::hit_local(const rmath::Ray<float>& local_ray, renv::gpu::Scene* scene, Isect& isect) {
     bool hit = false;
     for (int i = 0; i < n_triangles; i++) {
         // TODO: use bvh tree
@@ -14,7 +16,7 @@ bool Trimesh::hit_local(const rmath::Ray<float>& local_ray, renv::Scene* scene, 
 }
 
 __device__
-ropt::BoundingBox Trimesh::compute_bounding_box(renv::Scene* scene) {
+ropt::BoundingBox Trimesh::compute_bounding_box(renv::gpu::Scene* scene) {
     ropt::BoundingBox rv{};
     for (int i = 0; i < n_triangles; i++) {
         TriInner& tri = triangles[i];
@@ -39,33 +41,28 @@ rmath::Vec3<float> TriInner::get_normal(int i, VertexBuffer& buffer) {
 }
 
 __device__
-bool TriInner::tri_hit(const rmath::Ray<float>& local_ray, renv::Scene* scene, Isect& isect) {
+bool TriInner::tri_hit(const rmath::Ray<float>& local_ray, renv::gpu::Scene* scene, Isect& isect) {
     rmath::Vec3<float> a = get_vertex(0, scene->get_vertex_buffer());
     rmath::Vec3<float> b = get_vertex(1, scene->get_vertex_buffer());
     rmath::Vec3<float> c = get_vertex(2, scene->get_vertex_buffer());
-    rmath::Vec3<float> plane_norm = rmath::cross(b - a, c - a);
-    rmath::Plane<float> plane = rmath::Plane<float>(a, plane_norm);
+    rmath::Triangle<float> tri = rmath::Triangle<float>(a, b, c);
     
     float time;
-    if (plane.hit(local_ray, time) && time >= rmath::THRESHOLD && time < isect.time) {
-        rmath::Vec3<float> isect_pt = local_ray.at(time);
-        float tri_area = plane_norm.len();
-        float bary0 = rmath::cross(c - isect_pt, b - isect_pt).len() / tri_area;
-        float bary1 = rmath::cross(c - isect_pt, a - isect_pt).len() / tri_area;
-        float bary2 = rmath::cross(a - isect_pt, b - isect_pt).len() / tri_area;
-        if (abs(bary0 + bary1 + bary2 - 1.0f) <= rmath::THRESHOLD) {
-            isect.mat = &mat;
-            isect.shading = &shading;
-            isect.uv = rmath::Vec<float, 2>({bary1, bary2});
-            rmath::Vec3<float> n0 = get_normal(0, scene->get_vertex_buffer());
-            rmath::Vec3<float> n1 = get_normal(1, scene->get_vertex_buffer());
-            rmath::Vec3<float> n2 = get_normal(2, scene->get_vertex_buffer());
-            isect.norm = (bary0 * n0 + bary1 * n1 + bary2 * n2).normalized();
-            isect.time = time;
-            return true;
-        }
+    rmath::Vec<float, 2> uv;
+    if (tri.hit(local_ray, time, uv) && time >= rmath::THRESHOLD && time < isect.time) {
+        isect.mat = &mat;
+        isect.coords = &coords;
+        isect.uv = uv;
+        rmath::Vec3<float> n0 = get_normal(0, scene->get_vertex_buffer());
+        rmath::Vec3<float> n1 = get_normal(1, scene->get_vertex_buffer());
+        rmath::Vec3<float> n2 = get_normal(2, scene->get_vertex_buffer());
+        float bary0 = 1.0f - uv[0] - uv[1];
+        isect.norm = (bary0 * n0 + uv[0] * n1 + uv[1] * n2).normalized();
+        isect.time = time;
+        return true;
     }
     return false;
 }
 
+}
 }

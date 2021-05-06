@@ -11,11 +11,17 @@
 #endif
 
 namespace renv {
+namespace gpu {
+
 class Scene;
+
+}
 }
 
 namespace ropt {
 class BoundingBox;
+
+namespace gpu {
 
 class BVH {
 private:
@@ -38,7 +44,7 @@ class BVHIterator {
 private:
     const BVH& bvh;
     const rmath::Ray<float>& r;
-    renv::Scene* scene;
+    renv::gpu::Scene* scene;
     int node_idx;
     int n_int;
     
@@ -70,7 +76,7 @@ private:
     bool traverse_down(int max_time);
 public:
     CUDA_HOSTDEV
-    BVHIterator(const rmath::Ray<float>& r, float max_time, renv::Scene* scene);
+    BVHIterator(const rmath::Ray<float>& r, float max_time, renv::gpu::Scene* scene);
     CUDA_HOSTDEV
     void next(float max_time);
     CUDA_HOSTDEV
@@ -89,6 +95,8 @@ public:
         return bvh.n_objs * 2 - 1;
     }
 };
+
+}
 }
 
 #endif

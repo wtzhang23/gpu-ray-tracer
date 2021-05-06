@@ -13,6 +13,7 @@
 #endif
 
 namespace rprimitives {
+namespace gpu {
 class Texture {
 private:
     gputils::TextureBuffer4D<float> texture;
@@ -29,24 +30,7 @@ public:
         return texture;
     }
 };
-
-struct Shade {
-    int texture_x;
-    int texture_y;
-    int texture_width;
-    int texture_height;
-    CUDA_HOSTDEV
-    Shade(int texture_x, int texture_y, int texture_width, int texture_height): 
-                    texture_x(texture_x), texture_y(texture_y), texture_width(texture_width), texture_height(texture_height){}
-
-    CUDA_HOSTDEV
-    Shade(): texture_x(0), texture_y(0), texture_width(0), texture_height(0) {}
-
-    CUDA_HOSTDEV
-    bool is_degenerate() {
-        return texture_x == 0 && texture_y == 0 && texture_width == 0 && texture_height == 0;
-    }
-};
+}
 }
 
 #endif

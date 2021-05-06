@@ -5,9 +5,19 @@
 #include "raymath/linear.h"
 #include "raymath/geometry.h"
 #include "rayprimitives/material.h"
-#include "rayprimitives/texture.h"
-#include "rayenv/scene.h"
+#include "rayprimitives/texture_coords.h"
+#include "rayprimitives/gpu/texture.h"
+#include "rayenv/transformation.h"
 #include "rayenv/canvas.h"
+#include "rayenv/camera.h"
+
+namespace renv {
+namespace gpu {
+    
+    class Scene;
+
+}
+}
 
 namespace rtracer {
 
@@ -15,18 +25,18 @@ class MeshBuilder {
 private:
     int hitable_idx;
     std::vector<rmath::Vec3<int>> triangles;
-    std::vector<rprimitives::Shade> shadings;
+    std::vector<rprimitives::TextureCoords> coords;
     std::vector<rprimitives::Material> mats;
     rmath::Vec3<float> pos;
     rmath::Quat<float> rot;
     MeshBuilder(int hi, rmath::Vec3<float> pos, rmath::Quat<float> rot): 
-                        hitable_idx(hi), triangles(), shadings(), 
+                        hitable_idx(hi), triangles(), coords(), 
                         mats(), pos(pos), rot(rot) {}
     MeshBuilder(int hi): MeshBuilder(hi, rmath::Vec3<float>(), rmath::Quat<float>::identity()){}
 public:
-    void add_triangle(rmath::Vec3<int> tri, rprimitives::Shade shade, rprimitives::Material mat) {
+    void add_triangle(rmath::Vec3<int> tri, rprimitives::TextureCoords coords, rprimitives::Material mat) {
         triangles.push_back(tri);
-        shadings.push_back(shade);
+        this->coords.push_back(coords);
         mats.push_back(mat);
     }
 
@@ -83,7 +93,7 @@ public:
         return idx;
     }
 
-    int build_cube(float scale, rprimitives::Shade shade, rprimitives::Material mat);
+    int build_cube(float scale, rprimitives::TextureCoords coords, rprimitives::Material mat);
 
     void add_directional_light(rmath::Vec3<float> dir, rmath::Vec4<float> col) {
         dir_light_dir.push_back(dir);
@@ -94,7 +104,7 @@ public:
         point_light_pos.push_back(pos);
         point_light_col.push_back(col);
     }
-    renv::Scene* build_scene(renv::Canvas canvas, renv::Camera camera);
+    renv::gpu::Scene* build_gpu_scene(renv::Canvas canvas, renv::Camera camera);
 };
 
 }

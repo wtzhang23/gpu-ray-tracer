@@ -5,31 +5,21 @@
 #include "raymath/geometry.h"
 #include "rayopt/bounding_box.h"
 #include "rayprimitives/entity.h"
+#include "rayprimitives/isect.h"
 
 namespace renv {
+namespace gpu {
 class Scene;
+}
 }
 
 namespace rprimitives {
-
-class Shade;
-class Material;
-
-struct Isect {
-    float& time;
-    rmath::Vec3<float> norm;
-    rmath::Vec<float, 2> uv;
-    Shade* shading;
-    Material* mat;
-
-    __device__
-    Isect(float& time): time(time){}
-};
+namespace gpu {
 
 class Boxed {
 public:
     __device__
-    virtual ropt::BoundingBox compute_bounding_box(renv::Scene* scene) {
+    virtual ropt::BoundingBox compute_bounding_box(renv::gpu::Scene* scene) {
         return ropt::BoundingBox{};
     }
 };
@@ -49,13 +39,13 @@ public:
     virtual ~Hitable() {}
     
     __device__
-    virtual bool hit_local(const rmath::Ray<float>& local_ray, renv::Scene* scene, Isect& isect) {
+    virtual bool hit_local(const rmath::Ray<float>& local_ray, renv::gpu::Scene* scene, Isect& isect) {
         isect.time = INFINITY;
         return false;
     };
     
     __device__
-    bool hit(const rmath::Ray<float>& ray, renv::Scene* scene, Isect& isect) {
+    bool hit(const rmath::Ray<float>& ray, renv::gpu::Scene* scene, Isect& isect) {
         rmath::Vec3<float> local_dir = vec_to_local(ray.direction());
         float dir_len = local_dir.len();
         rmath::Ray<float> local_ray = rmath::Ray<float>(point_to_local(ray.origin()), local_dir);
@@ -67,6 +57,8 @@ public:
         return rv;
     }
 };
+
+}
 }
 
 #endif

@@ -1,4 +1,5 @@
 /build
+/bench
 proposal.aux
 proposal.fdb_latexmk
 proposal.fls

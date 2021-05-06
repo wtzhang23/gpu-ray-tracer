@@ -1,10 +1,12 @@
-#include "rayopt/bvh.h"
+#include "rayopt/gpu/bvh.h"
 #include "rayopt/bounding_box.h"
 #include "raymath/linear.h"
-#include "rayenv/scene.h"
+#include "rayenv/gpu/scene.h"
 #include <thrust/sort.h>
 
 namespace ropt {
+namespace gpu {
+
 __global__
 void gen_numbers(int* arr, int n) {
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -186,7 +188,7 @@ bool BVHIterator::traverse_down(int max_time) {
     }
 }
 CUDA_HOSTDEV
-BVHIterator::BVHIterator(const rmath::Ray<float>& r, float max_time, renv::Scene* scene): 
+BVHIterator::BVHIterator(const rmath::Ray<float>& r, float max_time, renv::gpu::Scene* scene): 
             bvh(scene->get_bvh()), r(r), node_idx(0), scene(scene), n_int(0) {
     float time;
     BoundingBox& top_box = bvh.boxes[get_box_idx(1)];
@@ -229,5 +231,7 @@ BoundingBox BVHIterator::cur_bounding_box() const {
     }
     int box_idx = get_box_idx(node_idx);
     return bvh.boxes[box_idx];
+}
+
 }
 }

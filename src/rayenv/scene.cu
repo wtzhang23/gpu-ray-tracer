@@ -1,16 +1,19 @@
-#include "rayenv/scene.h"
-#include "rayenv/scene.cuh"
+#include "rayenv/gpu/scene.h"
+#include "rayenv/gpu/scene.cuh"
+#include "rayenv/transformation.h"
 #include "rayprimitives/material.h"
-#include "rayprimitives/material.cuh"
+#include "rayprimitives/gpu/material.cuh"
+#include "rayprimitives/gpu/hitable.cuh"
 #include "rayopt/bounding_box.h"
 
 namespace renv {
+namespace gpu {
 static const int MAX_DEPTH = 10;
 
 __device__
 bool cast_local(Scene* scene, const rmath::Ray<float>& r, rprimitives::Isect& isect, const Transformation& t) {
-    rprimitives::Hitable** hitables = scene->get_hitables();
-    rprimitives::Hitable* h = hitables[t.get_hitable_idx()];
+    rprimitives::gpu::Hitable** hitables = scene->get_hitables();
+    rprimitives::gpu::Hitable* h = hitables[t.get_hitable_idx()];
     rmath::Vec3<float> local_dir = t.vec_to_local(r.direction());
     float dir_len = local_dir.len();
     rmath::Ray<float> local_ray = rmath::Ray<float>({t.point_to_local(r.origin()), local_dir});
@@ -24,17 +27,17 @@ bool cast_local(Scene* scene, const rmath::Ray<float>& r, rprimitives::Isect& is
 
 __device__
 bool cast_ray(Scene* scene, const rmath::Ray<float>& r, rprimitives::Isect& isect) {
-    // TODO: use bvh tree
-    Transformation* trans = scene->get_trans();
+    Environment& env = scene->get_environment();
+    Transformation* trans = env.get_trans();
     bool hit = false;
-    const ropt::BVH& bvh = scene->get_bvh();
+    const ropt::gpu::BVH& bvh = scene->get_bvh();
     if (bvh.empty()) {
-        for (int i = 0; i < scene->n_trans(); i++) {
+        for (int i = 0; i < env.n_trans(); i++) {
             const Transformation& t = trans[i];
             hit |= cast_local(scene, r, isect, t);
         }
     } else {
-        ropt::BVHIterator iter{r, INFINITY, scene};
+        ropt::gpu::BVHIterator iter{r, INFINITY, scene};
         while (iter.current() >= 0) {
             const Transformation& t = trans[iter.current()];
             if (cast_local(scene, r, isect, t)) {
@@ -42,36 +45,39 @@ bool cast_ray(Scene* scene, const rmath::Ray<float>& r, rprimitives::Isect& isec
             }
             iter.next(INFINITY);
         }
-        if (scene->is_debugging()) {
+        if (env.is_debugging()) {
             printf("tested %d / %d bounding boxes for %d objs\n", 
-                    iter.n_intersections(), iter.max_intersections(), scene->n_trans());
+                    iter.n_intersections(), iter.max_intersections(), env.n_trans());
         }
     }
     return hit;
 }
 
+enum FrameType {
+    NORMAL,
+    REFLECT,
+    REFRACT
+};
+
+struct RayFrame {
+    rmath::Ray<float> ray;
+    rmath::Vec3<float> hit_pt;
+    rmath::Vec3<float> norm;
+    rmath::Vec4<float> atten;
+    rprimitives::Material* last_mat;
+    float last_eta;
+    FrameType type;
+    int depth;
+    bool in_obj;
+};
+
 __device__
 rmath::Vec4<float> propagate_ray(Scene* scene, const rmath::Ray<float>& r, rprimitives::Isect& isect) {
-    enum FrameType {
-        NORMAL,
-        REFLECT,
-        REFRACT
-    };
+    renv::Environment& env = scene->get_environment();
 
-    struct RayFrame {
-        rmath::Ray<float> ray;
-        rmath::Vec3<float> hit_pt;
-        rmath::Vec3<float> norm;
-        rmath::Vec4<float> atten;
-        rprimitives::Material* last_mat;
-        float last_eta;
-        FrameType type;
-        int depth;
-        bool in_obj;
-    };
     RayFrame frames[MAX_DEPTH];
     frames[0] = {r, rmath::Vec3<float>(), rmath::Vec3<float>(), rmath::Vec4<float>({1.0f, 1.0f, 1.0f, 1.0f}), 
-                        NULL, 1.0f, FrameType::NORMAL, scene->get_recurse_depth(), false};
+                        NULL, 1.0f, FrameType::NORMAL, env.get_recurse_depth(), false};
     int stack_top = 0;
     rmath::Vec4<float> acc_col{};
     
@@ -80,11 +86,11 @@ rmath::Vec4<float> propagate_ray(Scene* scene, const rmath::Ray<float>& r, rprim
         switch (top.type) {
             case FrameType::NORMAL: {
                 isect.time = INFINITY; // reset
-                if (scene->is_debugging()) {
+                if (env.is_debugging()) {
                     printf("shooting a ray\n");
                 }
                 if (cast_ray(scene, top.ray, isect)) {
-                    acc_col += top.atten * rprimitives::illuminate(top.ray, isect, scene);
+                    acc_col += top.atten * rprimitives::gpu::illuminate(top.ray, isect, scene);
                     if (top.depth > 0) {
                         if (top.in_obj) {
                             rmath::Vec4<float> kt = top.last_mat->get_Kt();
@@ -110,7 +116,7 @@ rmath::Vec4<float> propagate_ray(Scene* scene, const rmath::Ray<float>& r, rprim
                 rmath::Vec4<float> kr = isect.mat->get_Kr();
                 frames[stack_top].type = FrameType::REFRACT;
                 if (kr[0] > 0.0f || kr[1] > 0.0f || kr[2] > 0.0f || kr[3] > 0.0f) {
-                    if (scene->is_debugging()) {
+                    if (env.is_debugging()) {
                         printf("preparing to shoot a reflection ray\n");
                     }
                     stack_top++;
@@ -128,7 +134,7 @@ rmath::Vec4<float> propagate_ray(Scene* scene, const rmath::Ray<float>& r, rprim
             case FrameType::REFRACT: {
                 rmath::Vec4<float> kt = isect.mat->get_Kt();
                 if (kt[0] > 0.0f || kt[1] > 0.0f || kt[2] > 0.0f || kt[3] > 0.0f) {
-                    if (scene->is_debugging()) {
+                    if (env.is_debugging()) {
                         printf("preparing to shoot a refraction ray\n");
                     }
                     top.type = FrameType::NORMAL;
@@ -155,5 +161,6 @@ rmath::Vec4<float> propagate_ray(Scene* scene, const rmath::Ray<float>& r, rprim
         }
     }
     return acc_col;
+}
 }
 }

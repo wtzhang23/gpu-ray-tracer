@@ -4,13 +4,17 @@
 #include <string>
 
 namespace renv {
+namespace gpu {
+
 class Scene;
+
+}
 }
 
 namespace procedural {
-
-renv::Scene* generate(std::string config_path);
-    
+namespace gpu {
+renv::gpu::Scene* generate(std::string config_path);
+}
 }
 
 #endif

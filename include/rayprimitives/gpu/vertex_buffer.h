@@ -5,12 +5,14 @@
 #include "gputils/alloc.h"
 #include "raymath/linear.h"
 
-namespace rprimitives {
 #ifdef __CUDACC__
 #define CUDA_HOSTDEV __host__ __device__
 #else
 #define CUDA_HOSTDEV
 #endif
+
+namespace rprimitives {
+namespace gpu {
 
 class VertexBuffer {
 private:
@@ -29,6 +31,7 @@ public:
         return n;
     }
 };
+}
 }
 
 #endif

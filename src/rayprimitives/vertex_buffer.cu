@@ -1,6 +1,8 @@
-#include "rayprimitives/vertex_buffer.h"
+#include "rayprimitives/gpu/vertex_buffer.h"
 
 namespace rprimitives {
+namespace gpu {
+
 template<bool point>
 gputils::TextureBuffer4D<float> arr_vec_to_text(std::vector<rmath::Vec3<float>>& arr_vec) {
     std::vector<float> flattened = std::vector<float>();
@@ -17,4 +19,6 @@ gputils::TextureBuffer4D<float> arr_vec_to_text(std::vector<rmath::Vec3<float>>&
 
 VertexBuffer::VertexBuffer(std::vector<rmath::Vec3<float>>& vertices, std::vector<rmath::Vec3<float>>& normals): 
         v(arr_vec_to_text<true>(vertices)), n(arr_vec_to_text<false>(normals)){}
+
+}
 }

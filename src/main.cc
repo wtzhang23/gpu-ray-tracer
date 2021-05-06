@@ -5,11 +5,12 @@
 #include <iostream>
 #include <cuda.h>
 #include <cxxopts.hpp>
+#include <functional>
 #include "raytracer.h"
 #include "rayenv/canvas.h"
 #include "raymath/geometry.h"
 #include "raymath/linear.h"
-#include "rayenv/scene.h"
+#include "rayenv/gpu/scene.h"
 #include "procedural/cube_world.h"
 
 static const int WIDTH = 640;
@@ -23,8 +24,8 @@ static const SDL_Color FOREGROUND_TXT_COL = {255, 255, 255, 255};
 static const SDL_Color BACKGROUND_TXT_COL = {0, 0, 0, 0};
 static const char* DEFAULT_KERNEL_DIM = "16";
 
-void open_window(renv::Scene* scene, int kernel_dim, bool disable_opt);
-void bench(renv::Scene* scene, int kernel_dim, bool disable_opt);
+void open_window(renv::Environment& env, std::function<void(void)> draw, std::function<void(int, int)> debug);
+void bench(renv::Environment& env, std::function<void(void)> drawer);
 
 int main(int argc, const char** argv) {
     cxxopts::Options options("Ray Tracer", "A gpu-accelerated ray tracer.");
@@ -40,17 +41,25 @@ int main(int argc, const char** argv) {
     bool r = opt_res["unoptimize"].as<bool>();
 
     // build scene
-    renv::Scene* scene = procedural::generate(config_path);
+    renv::gpu::Scene* scene = procedural::gpu::generate(config_path);
+    renv::Environment& env = scene->get_environment();
     std::cout << "Loaded scene" << std::endl;
     if (b) {
-        bench(scene, kernel_dim, r);
+        bench(env, [=]{
+            rtracer::gpu::update_scene(scene, kernel_dim, !r);
+        });
     } else {
-        open_window(scene, kernel_dim, r);
+        open_window(env, [=]{
+            rtracer::gpu::update_scene(scene, kernel_dim, !r);
+        }, [=](int x, int y){
+            rtracer::gpu::debug_cast(scene, x, y);
+        });
     }
     return 0;
 }
 
-void open_window(renv::Scene* scene, int kernel_dim, bool unoptimize) {
+void open_window(renv::Environment& env, std::function<void(void)> draw, 
+                                                        std::function<void(int, int)> debug) {
     // initialize window
     SDL_Init(SDL_INIT_VIDEO);
     TTF_Init();
@@ -59,7 +68,7 @@ void open_window(renv::Scene* scene, int kernel_dim, bool unoptimize) {
                                                             WIDTH, HEIGHT, SDL_WINDOW_RESIZABLE);
     SDL_Surface* screen = SDL_GetWindowSurface(window);
     SDL_Surface* surface = NULL;
-    scene->get_canvas().get_surface(&surface); // link scene near plane to screen
+    env.get_canvas().get_surface(&surface); // link scene near plane to screen
     assert(surface != NULL);
     
     TTF_Font* font = TTF_OpenFont(FONT_PATH, FONT_SIZE);
@@ -112,21 +121,22 @@ void open_window(renv::Scene* scene, int kernel_dim, bool unoptimize) {
                         if (mouse_trapped) {
                             SDL_KeyboardEvent key_event = event.key;
                             bool key_down = key_event.type == SDL_KEYDOWN;
+                            renv::Camera& cam = env.get_camera();
                             switch (key_event.keysym.sym) {
                                 case SDLK_w: {
-                                    scene->get_camera().translate(rmath::Vec3<float>{0, 0, MOVE_SPEED});
+                                    cam.translate(rmath::Vec3<float>{0, 0, MOVE_SPEED});
                                     break;
                                 }
                                 case SDLK_s: {
-                                    scene->get_camera().translate(rmath::Vec3<float>{0, 0, -MOVE_SPEED});
+                                    cam.translate(rmath::Vec3<float>{0, 0, -MOVE_SPEED});
                                     break;
                                 }
                                 case SDLK_a: {
-                                    scene->get_camera().translate(rmath::Vec3<float>{-MOVE_SPEED, 0, 0});
+                                    cam.translate(rmath::Vec3<float>{-MOVE_SPEED, 0, 0});
                                     break;
                                 }
                                 case SDLK_d: {
-                                    scene->get_camera().translate(rmath::Vec3<float>{MOVE_SPEED, 0, 0});
+                                    cam.translate(rmath::Vec3<float>{MOVE_SPEED, 0, 0});
                                     break;
                                 }
                                 case SDLK_ESCAPE: {
@@ -139,7 +149,7 @@ void open_window(renv::Scene* scene, int kernel_dim, bool unoptimize) {
                     case SDL_MOUSEMOTION: {
                         if (mouse_trapped) {
                             SDL_MouseMotionEvent mouse_event = event.motion;
-                            renv::Camera& cam = scene->get_camera(); 
+                            renv::Camera& cam = env.get_camera(); 
                             rmath::Vec<float, 2> rel_mot = rmath::Vec<float, 2>({(float) mouse_event.xrel, (float) mouse_event.yrel}).normalized();
                             rmath::Vec3<float> global_mot = rel_mot[0] * cam.right().direction() + rel_mot[1] * cam.up().direction();
                             rmath::Quat<float> rot = rmath::Quat<float>(cam.up().direction(), ROT_SPEED * rel_mot[0]) 
@@ -151,14 +161,14 @@ void open_window(renv::Scene* scene, int kernel_dim, bool unoptimize) {
                     case SDL_MOUSEBUTTONDOWN: {
                         if (!mouse_trapped && event.button.button == SDL_BUTTON_LEFT) {
                             std::cout << "shooting debug ray at " << event.button.x << ", " << event.button.y << std::endl;
-                            rtracer::debug_cast(scene, event.button.x, event.button.y);
+                            debug(event.button.x, event.button.y);
                         }
                         break;
                     }
                 }
             }
             SDL_FillRect(screen, NULL, 0x0);
-            rtracer::update_scene(scene, kernel_dim, !unoptimize);
+            draw();
             SDL_BlitSurface(surface, NULL, screen, NULL);
             if (draw_txt) {
                 SDL_BlitSurface(text_surface, NULL, screen, NULL);
@@ -177,10 +187,10 @@ void open_window(renv::Scene* scene, int kernel_dim, bool unoptimize) {
     SDL_Quit();
 }
 
-void bench(renv::Scene* scene, int kernel_dim, bool unoptimize) {
+void bench(renv::Environment& env, std::function<void(void)> draw) {
     auto from = std::chrono::high_resolution_clock::now();
-    rtracer::update_scene(scene, kernel_dim, !unoptimize);
+    draw();
     auto to = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = to - from;
-    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count() << " ms" << std::endl;
+    std::cout << "Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count() << " ms" << std::endl;
 }

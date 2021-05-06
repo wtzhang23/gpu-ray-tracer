@@ -260,6 +260,35 @@ public:
         return true;
     }
 };
+
+template <typename T>
+class Triangle {
+private:
+    rmath::Vec3<T> a;
+    rmath::Vec3<T> b;
+    rmath::Vec3<T> c;
+public:
+    CUDA_HOSTDEV
+    Triangle(rmath::Vec3<T> a, rmath::Vec3<T> b, rmath::Vec3<T> c): a(a), b(b), c(c) {}
+
+    CUDA_HOSTDEV
+    bool hit(const Ray<T>& r, float& time, rmath::Vec<T, 2>& uv) const {
+        rmath::Vec3<float> plane_norm = rmath::cross(b - a, c - a);
+        rmath::Plane<float> plane = rmath::Plane<float>(a, plane_norm);
+        if (plane.hit(r, time)) {
+            rmath::Vec3<float> isect_pt = r.at(time);
+            float tri_area = plane_norm.len();
+            float bary0 = rmath::cross(c - isect_pt, b - isect_pt).len() / tri_area;
+            float bary1 = rmath::cross(c - isect_pt, a - isect_pt).len() / tri_area;
+            float bary2 = rmath::cross(a - isect_pt, b - isect_pt).len() / tri_area;
+            if (abs(bary0 + bary1 + bary2 - 1.0f) <= rmath::THRESHOLD) {
+                uv = {bary1, bary2};
+                return true;
+            }
+        }
+        return false;
+    }
+};
 }
 
 #endif

@@ -3,7 +3,7 @@
 #include <fstream>
 #include "procedural/cube_world.h"
 #include "procedural/perlin.h"
-#include "rayenv/scene.h"
+#include "rayenv/gpu/scene.h"
 #include "rayenv/canvas.h"
 #include "raymath/geometry.h"
 #include "raymath/linear.h"
@@ -19,12 +19,22 @@ const float DEFAULT_FOV = M_PI / 4;
 const float DEFAULT_UNIT_LEN = 200;
 const float DEFAULT_AMPLITUDE = 1.0f;
 
-renv::Scene* generate(std::string config_path) {
-    std::ifstream ifs(config_path.c_str());
-    rapidjson::IStreamWrapper isw(ifs);
-    rapidjson::Document document;
-    document.ParseStream(isw);
-    
+rmath::Vec3<float> read_vec3(const rapidjson::Value& v) {
+    return rmath::Vec3<float>({v[0].GetFloat(), v[1].GetFloat(), v[2].GetFloat()});
+}
+
+rmath::Vec4<float> read_vec4(const rapidjson::Value& v) {
+    auto& vec = v;
+    return rmath::Vec4<float>({v[0].GetFloat(), v[1].GetFloat(), v[2].GetFloat(), v[3].GetFloat()});
+}
+
+struct CubeConfig {
+    rtracer::SceneBuilder builder;
+    renv::Camera cam;
+    renv::Canvas canvas;
+};
+
+CubeConfig generate_config(rapidjson::Document& document) {
     int seed = DEFAULT_SEED;
     int grid_size = DEFAULT_GRID_SIZE;
     int width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT;
@@ -49,15 +59,6 @@ renv::Scene* generate(std::string config_path) {
         unit_length = (float) document["unit_length"].GetDouble();
     }
 
-    auto read_vec3 = [&](const rapidjson::Value& v) {
-        return rmath::Vec3<float>({v[0].GetFloat(), v[1].GetFloat(), v[2].GetFloat()});
-    };
-
-    auto read_vec4 = [&](const rapidjson::Value& v) {
-        auto& vec = v;
-        return rmath::Vec4<float>({v[0].GetFloat(), v[1].GetFloat(), v[2].GetFloat(), v[3].GetFloat()});
-    };
-
     // build scene    
     std::string atlas{document["atlas"].GetString()};
     renv::Canvas canvas{width, height};
@@ -72,9 +73,9 @@ renv::Scene* generate(std::string config_path) {
         for (rapidjson::SizeType i = 0; i < n_cubes; i++) {
             const rapidjson::Value& cube = cubes_obj[i];
             rprimitives::Material mat{};
-            rprimitives::Shade shading{};
+            rprimitives::TextureCoords txt_coords{};
 
-            if (cube.HasMember("shading")) {
+            if (cube.HasMember("texture")) {
                 // TODO: implement texture mapping
             }
 
@@ -105,7 +106,7 @@ renv::Scene* generate(std::string config_path) {
             }
 
             scene_builder.build_cube(.999f,
-                shading,
+                txt_coords,
                 mat
             );
         }
@@ -169,21 +170,41 @@ renv::Scene* generate(std::string config_path) {
 
     cam.set_position({0.0f, max_height + 10.0f, -(float) grid_size / 2});
     cam.set_orientation(rmath::Quat<float>({1.0f, 0.0f, 0.0f}, 45));
-    renv::Scene* scene = scene_builder.build_scene(canvas, cam);
+    return {scene_builder, cam, canvas};
+}
+
+void finish_env(renv::Environment& env, rapidjson::Document& document) {
     if (document.HasMember("ambience")) {
-        scene->set_ambience(read_vec4(document["ambience"]));
+        env.set_ambience(read_vec4(document["ambience"]));
     }
     if (document.HasMember("depth")) {
-        scene->set_recurse_depth(document["depth"].GetInt());
+        env.set_recurse_depth(document["depth"].GetInt());
     }
     if (document.HasMember("distance_attenuation")) {
         const rapidjson::Value& atten = document["distance_attenuation"];
         float const_term = (float) atten["constant_term"].GetDouble();
         float linear_term = (float) atten["linear_term"].GetDouble();
         float quad_term = (float) atten["quadratic_term"].GetDouble();
-        scene->set_dist_atten(const_term, linear_term, quad_term);
+        env.set_dist_atten(const_term, linear_term, quad_term);
     }
+}
+
+namespace gpu {
+
+renv::gpu::Scene* generate(std::string config_path) {
+    // read doc
+    std::ifstream ifs(config_path.c_str());
+    rapidjson::IStreamWrapper isw(ifs);
+    rapidjson::Document document;
+    document.ParseStream(isw);
+
+    CubeConfig config = generate_config(document);
+    renv::gpu::Scene* scene = config.builder.build_gpu_scene(config.canvas, config.cam);
+    renv::Environment& env = scene->get_environment();
+    finish_env(env, document);
     return scene;
+}
+
 }
 
 }
