@@ -52,6 +52,22 @@ public:
         this->bvh = bvh;
     }
 
+    static void free(Scene& scene) {
+        for (int i = 0; i < scene.nh; i++) {
+            cudaFree(scene.hitables[i]);
+        }
+        cudaFree(scene.hitables);
+
+        for (int i = 0; i < scene.nl; i++) {
+            cudaFree(scene.lights[i]);
+        }
+        cudaFree(scene.lights);
+
+        rprimitives::gpu::VertexBuffer::free(scene.buffer);
+        rprimitives::gpu::Texture::free(scene.atlas);
+        cudaFree(scene.env.get_trans());
+    }
+
     CUDA_HOSTDEV
     Environment& get_environment() {
         return env;

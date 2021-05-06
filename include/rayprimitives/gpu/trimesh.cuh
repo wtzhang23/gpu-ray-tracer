@@ -67,8 +67,9 @@ public:
     __device__
     ropt::BoundingBox compute_bounding_box(renv::gpu::Scene* scene) override;
 
-    __host__ __device__
-    ~Trimesh() override {}
+    virtual void free() override {
+        cudaFree(triangles);
+    }
 };
 
 }

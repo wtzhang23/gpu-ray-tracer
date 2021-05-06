@@ -55,6 +55,7 @@ int main(int argc, const char** argv) {
             rtracer::gpu::debug_cast(scene, x, y);
         });
     }
+    renv::gpu::Scene::free(*scene);
     return 0;
 }
 

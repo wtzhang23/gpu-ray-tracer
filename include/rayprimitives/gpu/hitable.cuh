@@ -35,8 +35,7 @@ public:
     __device__
     Hitable(Entity* entity): Entity(entity) {}
 
-    CUDA_HOSTDEV
-    virtual ~Hitable() {}
+    virtual void free() {};
     
     __device__
     virtual bool hit_local(const rmath::Ray<float>& local_ray, renv::gpu::Scene* scene, Isect& isect) {

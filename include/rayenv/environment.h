@@ -29,6 +29,7 @@ private:
 public:
     Environment(Canvas canvas, Camera camera, Transformation* trans, int n_trans): canvas(canvas), dist_atten(), ambience(), 
                                             cam(camera), trans(trans), nt(n_trans), recurse_depth(0), debugging(false){}
+    
     void set_dist_atten(float const_term, float linear_term, float quad_term) {
         dist_atten = rmath::Vec3<float>({const_term, linear_term, quad_term});
     }

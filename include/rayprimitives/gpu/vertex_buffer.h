@@ -21,6 +21,11 @@ private:
 public:
     VertexBuffer(std::vector<rmath::Vec3<float>>& vertices, std::vector<rmath::Vec3<float>>& normals);
     
+    static void free(VertexBuffer& buffer) {
+        gputils::TextureBuffer4D<float>::free(buffer.v);
+        gputils::TextureBuffer4D<float>::free(buffer.n);
+    }
+
     CUDA_HOSTDEV
     gputils::TextureBuffer4D<float>& get_vertices() {
         return v;

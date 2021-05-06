@@ -20,10 +20,10 @@ private:
 
     CUDA_HOSTDEV
     static rmath::Vec4<float> color_to_vec(renv::Color c);
-
-    static void free(Texture& texture);
 public:
     Texture(gputils::TextureBuffer4D<float> texture): texture(texture) {}
+
+    static void free(Texture& texture);
 
     CUDA_HOSTDEV
     gputils::TextureBuffer4D<float>& get_buffer() {
