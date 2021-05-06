@@ -1,8 +1,8 @@
 /build
 /bench
-proposal.aux
-proposal.fdb_latexmk
-proposal.fls
-proposal.log
-proposal.pdf
-proposal.synctex.gz
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.pdf
+*.synctex.gz

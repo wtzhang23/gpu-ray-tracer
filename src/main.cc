@@ -211,6 +211,6 @@ void bench(renv::Environment& env, std::function<void(void)> draw) {
     auto from = std::chrono::high_resolution_clock::now();
     draw();
     auto to = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed = to - from;
-    std::cout << "Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count() << " ms" << std::endl;
+    std::chrono::duration<double, std::milli> elapsed = to - from;
+    std::cout << "Time: " << elapsed.count() << " ms" << std::endl;
 }
