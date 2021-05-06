@@ -6,7 +6,6 @@
 #include "raymath/geometry.h"
 #include "rayprimitives/material.h"
 #include "rayprimitives/texture_coords.h"
-#include "rayprimitives/gpu/texture.h"
 #include "rayenv/transformation.h"
 #include "rayenv/canvas.h"
 #include "rayenv/camera.h"
@@ -14,6 +13,12 @@
 namespace renv {
 namespace gpu {
     
+    class Scene;
+
+}
+
+namespace cpu {
+
     class Scene;
 
 }
@@ -53,6 +58,9 @@ private:
     std::vector<rmath::Vec4<float>> dir_light_col;
     std::vector<renv::Transformation> trans;
     std::string atlas_path;
+
+private:
+    std::vector<rmath::Vec3<float>> generate_normals();
 public:
     SceneBuilder(std::string atlas_path): vertices(), meshes(), point_light_pos(),
                         dir_light_dir(), point_light_col(), dir_light_col(), 
@@ -105,6 +113,7 @@ public:
         point_light_col.push_back(col);
     }
     renv::gpu::Scene* build_gpu_scene(renv::Canvas canvas, renv::Camera camera);
+    renv::cpu::Scene* build_cpu_scene(renv::Canvas canvas, renv::Camera camera);
 };
 
 }

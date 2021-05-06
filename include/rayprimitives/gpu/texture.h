@@ -4,7 +4,6 @@
 #include "raymath/linear.h"
 #include "rayenv/color.h"
 #include "gputils/alloc.h"
-#include <cstdint>
 
 #ifdef __CUDACC__
 #define CUDA_HOSTDEV __host__ __device__

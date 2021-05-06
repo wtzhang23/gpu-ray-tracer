@@ -218,7 +218,7 @@ Vec<T, 3> reflect(const Vec<T, 3>& dir, const Vec<T, 3>& norm) {
     Vec<T, 3> d_norm = dir.normalized();
     Vec<T, 3> n_norm = norm.normalized();
     Vec<T, 3> projection = dot(d_norm, n_norm) * n_norm;
-    Vec<T, 3> r_norm = (d_norm - 2 * n_norm).normalized();
+    Vec<T, 3> r_norm = (d_norm - 2 * projection).normalized();
     return d_len * r_norm;
 }
 

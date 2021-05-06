@@ -46,6 +46,11 @@ public:
         debugging = mode;
     }
 
+    void clear_transformations() {
+        trans = NULL;
+        nt = 0;
+    }
+
     CUDA_HOSTDEV
     bool is_debugging() const {
         return debugging;

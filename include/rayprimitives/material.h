@@ -101,6 +101,16 @@ public:
         return eta;
     }
 
+    CUDA_HOSTDEV
+    bool reflective() const {
+        return Kr[0] > 0.0f || Kr[1] > 0.0f || Kr[2] > 0.0f || Kr[3] > 0.0f;
+    }
+
+    CUDA_HOSTDEV
+    bool refractive() const {
+        return Kt[0] > 0.0f || Kt[1] > 0.0f || Kt[2] > 0.0f || Kt[3] > 0.0f;
+    }
+
     friend std::ostream& operator<<(std::ostream& os, const Material& mat);
 };
 }

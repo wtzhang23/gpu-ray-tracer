@@ -72,7 +72,7 @@ void create_boxes(renv::gpu::Scene* scene, ropt::BoundingBox* boxes, int padded_
 }
 
 const int BOX_THREADS = 512;
-ropt::gpu::BVH update_bvh(renv::gpu::Scene* scene) {
+ropt::gpu::BVH create_bvh(renv::gpu::Scene* scene) {
     // generate bounding boxes for bvh usage
     int org_size = scene->get_environment().n_trans();
     int padded_size = 1 << ((int) ceil(log2(org_size))); // ensure # of boxes is a power of 2
@@ -87,7 +87,7 @@ ropt::gpu::BVH update_bvh(renv::gpu::Scene* scene) {
 }
 
 void debug_cast(renv::gpu::Scene* scene, int x, int y) {
-    ropt::gpu::BVH bvh = update_bvh(scene);
+    ropt::gpu::BVH bvh = create_bvh(scene);
     scene->get_environment().set_debug_mode(true);
     scene->set_bvh(bvh);
     debug<<<1, 1>>>(scene, x, y);
@@ -100,7 +100,7 @@ void debug_cast(renv::gpu::Scene* scene, int x, int y) {
 void update_scene(renv::gpu::Scene* scene, int kernel_dim, bool optimize) {
     ropt::gpu::BVH bvh;
     if (optimize) {
-        bvh = update_bvh(scene);
+        bvh = create_bvh(scene);
         scene->set_bvh(bvh);
     }
     dim3 dimBlock(kernel_dim, kernel_dim);

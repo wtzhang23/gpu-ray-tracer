@@ -48,7 +48,7 @@ public:
     __device__
     bool tri_hit(const rmath::Ray<float>& ray, renv::gpu::Scene* scene, Isect& isect);
 
-    friend class Triangle;
+    friend class Trimesh;
     friend class TrimeshBuilder;
 };
 

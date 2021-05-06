@@ -5,7 +5,7 @@
 #include "rayenv/gpu/scene.h"
 #include "rayenv/gpu/scene.cuh"
 #include "rayprimitives/gpu/texture.cuh"
-#include "rayprimitives/gpu/material.cuh"
+#include "rayprimitives/gpu/phong.cuh"
 #include "rayprimitives/gpu/hitable.cuh"
 #include "rayprimitives/gpu/trimesh.cuh"
 #include "rayprimitives/gpu/light.cuh"
@@ -14,25 +14,6 @@
 #include "assets.h"
 
 namespace rtracer {
-
-std::vector<rmath::Vec3<float>> generate_normals(const std::vector<rmath::Vec3<float>>& vertices,
-                                                    const std::vector<rmath::Vec3<int>>& triangles) {
-    std::vector<rmath::Vec3<float>> normals = std::vector<rmath::Vec3<float>>(vertices.size());
-    for (const rmath::Vec3<int>& tri : triangles) {
-        rmath::Vec3<float> a = vertices[tri[1]] - vertices[tri[0]];
-        rmath::Vec3<float> b = vertices[tri[2]] - vertices[tri[0]];
-        rmath::Vec3<float> n = rmath::cross(a, b).normalized();
-        normals[tri[0]] += n;
-        normals[tri[1]] += n;
-        normals[tri[2]] += n;
-    }
-
-    // renormalize sums
-    for (rmath::Vec3<float>& n : normals) {
-        n = n.normalized();
-    }
-    return normals;
-}
 
 struct MeshConfig {
     rprimitives::gpu::Trimesh** meshes;
@@ -101,7 +82,7 @@ void build_lights(LightConfig* config) {
 
 renv::gpu::Scene* SceneBuilder::build_gpu_scene(renv::Canvas canvas, renv::Camera camera) {
     // load assets
-    gputils::TextureBuffer4D<float> atlas = assets::read_png(atlas_path.c_str());
+    gputils::TextureBuffer4D<float> atlas = assets::gpu::read_png(atlas_path.c_str());
 
     // flatten meshes
     std::vector<rmath::Vec3<int>> flattened_triangles{};
@@ -124,7 +105,7 @@ renv::gpu::Scene* SceneBuilder::build_gpu_scene(renv::Canvas canvas, renv::Camer
     }
 
     // build vertex buffer
-    std::vector<rmath::Vec3<float>> normals = generate_normals(vertices, flattened_triangles);
+    std::vector<rmath::Vec3<float>> normals = generate_normals();
     rprimitives::gpu::VertexBuffer buffer{vertices, normals};
 
     // build meshes

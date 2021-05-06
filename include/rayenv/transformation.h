@@ -14,6 +14,7 @@ class Transformation: public rprimitives::Entity {
 private:
     int hitable_idx;
 public:
+    Transformation(): hitable_idx(-1){}
     Transformation(int hi): hitable_idx(hi) {}
     CUDA_HOSTDEV
     int get_hitable_idx() const {

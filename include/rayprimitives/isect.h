@@ -16,8 +16,8 @@ struct Isect {
     float& time;
     rmath::Vec3<float> norm;
     rmath::Vec<float, 2> uv;
-    TextureCoords* coords;
-    Material* mat;
+    const TextureCoords* coords;
+    const Material* mat;
 
     CUDA_HOSTDEV
     Isect(float& time): time(time){}

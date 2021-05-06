@@ -28,27 +28,22 @@ public:
     Entity(const Entity* entity): o(entity->o), p(entity->p) {}
 
     CUDA_HOSTDEV
-    virtual ~Entity(){}
+    rmath::Vec3<float> point_to_local(const rmath::Vec3<float>& v) const;
 
     CUDA_HOSTDEV
-    rmath::Vec3<float> point_to_local(const rmath::Vec3<float>& v) const {
-        return o * (v - p);
-    }
+    rmath::Vec3<float> point_from_local(const rmath::Vec3<float>& v) const;
 
     CUDA_HOSTDEV
-    rmath::Vec3<float> point_from_local(const rmath::Vec3<float>& v) const {
-        return (o.inverse() * v) + p;
-    }
+    rmath::Vec3<float> vec_to_local(const rmath::Vec3<float>& v) const;
 
     CUDA_HOSTDEV
-    rmath::Vec3<float> vec_to_local(const rmath::Vec3<float>& v) const {
-        return o * v;
-    }
+    rmath::Vec3<float> vec_from_local(const rmath::Vec3<float>& v) const;
 
     CUDA_HOSTDEV
-    rmath::Vec3<float> vec_from_local(const rmath::Vec3<float>& v) const {
-        return o.inverse() * v;
-    }
+    rmath::Ray<float> ray_to_local(const rmath::Ray<float>& ray) const;
+
+    CUDA_HOSTDEV
+    rmath::Ray<float> ray_from_local(const rmath::Ray<float>& ray) const;
 
     CUDA_HOSTDEV
     void translate_global(rmath::Vec3<float> dp) {

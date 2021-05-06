@@ -9,11 +9,20 @@ namespace gpu {
 class Scene;
 
 }
+
+namespace cpu {
+
+class Scene;
+
+}
 }
 
 namespace procedural {
 namespace gpu {
 renv::gpu::Scene* generate(std::string config_path);
+}
+namespace cpu {
+renv::cpu::Scene* generate(std::string config_path);
 }
 }
 

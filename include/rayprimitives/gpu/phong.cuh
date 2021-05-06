@@ -1,8 +1,7 @@
-#ifndef RAYPRIMITIVES_GPU_MATERIAL_CUH
-#define RAYPRIMITIVES_GPU_MATERIAL_CUH
+#ifndef RAYPRIMITIVES_GPU_PHONG_CUH
+#define RAYPRIMITIVES_GPU_PHONG_CUH
 
-#include "rayprimitives/material.h"
-#include "rayprimitives/gpu/hitable.cuh"
+#include "raymath/geometry.h"
 
 namespace renv {
 namespace gpu {
@@ -13,6 +12,9 @@ class Scene;
 }
 
 namespace rprimitives {
+
+class Isect;
+
 namespace gpu {
 
 __device__

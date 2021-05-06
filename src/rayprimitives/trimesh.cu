@@ -1,5 +1,8 @@
 #include "rayenv/gpu/scene.h"
+#include "rayenv/cpu/scene.h"
 #include "rayprimitives/gpu/trimesh.cuh"
+#include "rayprimitives/cpu/trimesh.h"
+#include "rayprimitives/cpu/vertex_buffer.h"
 #include <iostream>
 
 namespace rprimitives {
@@ -56,6 +59,54 @@ bool TriInner::tri_hit(const rmath::Ray<float>& local_ray, renv::gpu::Scene* sce
         rmath::Vec3<float> n0 = get_normal(0, scene->get_vertex_buffer());
         rmath::Vec3<float> n1 = get_normal(1, scene->get_vertex_buffer());
         rmath::Vec3<float> n2 = get_normal(2, scene->get_vertex_buffer());
+        float bary0 = 1.0f - uv[0] - uv[1];
+        isect.norm = (bary0 * n0 + uv[0] * n1 + uv[1] * n2).normalized();
+        isect.time = time;
+        return true;
+    }
+    return false;
+}
+
+}
+
+namespace cpu {
+
+bool Trimesh::hit_local(const rmath::Ray<float>& local_ray, renv::cpu::Scene* scene, Isect& isect) const {
+    bool hit = false;
+    for (const TriInner& inner : triangles) {
+        // TODO: use bvh tree
+        hit |= inner.tri_hit(local_ray, scene, isect);
+    }
+    return hit;
+}
+
+ropt::BoundingBox Trimesh::compute_bounding_box(renv::cpu::Scene* scene) const {
+    ropt::BoundingBox rv{};
+    for (const TriInner& inner : triangles) {
+        for (int j = 0; j < 3; j++) {
+            rmath::Vec3<float> v = scene->get_vertex_buffer().get_vertex(inner.indices[j]);
+            rv.fit_vertex(v);
+        }
+    }
+    return ropt::from_local(rv, *this);
+}
+
+bool TriInner::tri_hit(const rmath::Ray<float>& local_ray, renv::cpu::Scene* scene, Isect& isect) const {
+    VertexBuffer& buffer = scene->get_vertex_buffer();
+    rmath::Vec3<float> a = buffer.get_vertex(indices[0]);
+    rmath::Vec3<float> b = buffer.get_vertex(indices[1]);
+    rmath::Vec3<float> c = buffer.get_vertex(indices[2]);
+    rmath::Triangle<float> tri = rmath::Triangle<float>(a, b, c);
+    
+    float time;
+    rmath::Vec<float, 2> uv;
+    if (tri.hit(local_ray, time, uv) && time >= rmath::THRESHOLD && time < isect.time) {
+        isect.mat = &mat;
+        isect.coords = &coords;
+        isect.uv = uv;
+        rmath::Vec3<float> n0 = buffer.get_normal(indices[0]);
+        rmath::Vec3<float> n1 = buffer.get_normal(indices[1]);
+        rmath::Vec3<float> n2 = buffer.get_normal(indices[2]);
         float bary0 = 1.0f - uv[0] - uv[1];
         isect.norm = (bary0 * n0 + uv[0] * n1 + uv[1] * n2).normalized();
         isect.time = time;

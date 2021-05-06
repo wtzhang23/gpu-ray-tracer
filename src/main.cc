@@ -11,6 +11,7 @@
 #include "raymath/geometry.h"
 #include "raymath/linear.h"
 #include "rayenv/gpu/scene.h"
+#include "rayenv/cpu/scene.h"
 #include "procedural/cube_world.h"
 
 static const int WIDTH = 640;
@@ -33,29 +34,47 @@ int main(int argc, const char** argv) {
         ("c,config", "Configuration file (json)", cxxopts::value<std::string>())
         ("b,bench", "Benchmark mode", cxxopts::value<bool>()->default_value("false"))
         ("r,unoptimize", "Disable optimizing data structures", cxxopts::value<bool>()->default_value("false"))
+        ("s,serial", "Use serial implementation", cxxopts::value<bool>()->default_value("false"))
         ("d,dim", "Kernel dimension", cxxopts::value<int>()->default_value(DEFAULT_KERNEL_DIM));
     auto opt_res = options.parse(argc, argv);
     std::string config_path = opt_res["config"].as<std::string>();
     int kernel_dim = opt_res["dim"].as<int>();
     bool b = opt_res["bench"].as<bool>();
     bool r = opt_res["unoptimize"].as<bool>();
-
-    // build scene
-    renv::gpu::Scene* scene = procedural::gpu::generate(config_path);
-    renv::Environment& env = scene->get_environment();
-    std::cout << "Loaded scene" << std::endl;
-    if (b) {
-        bench(env, [=]{
-            rtracer::gpu::update_scene(scene, kernel_dim, !r);
-        });
+    bool s = opt_res["serial"].as<bool>();
+    if (s) {
+        renv::cpu::Scene* scene = procedural::cpu::generate(config_path);
+        renv::Environment& env = scene->get_environment();
+        std::cout << "Loaded scene" << std::endl;
+        if (b) {
+            bench(env, [=]{
+                rtracer::cpu::update_scene(scene, kernel_dim, !r);
+            });
+        } else {
+            open_window(env, [=]{
+                rtracer::cpu::update_scene(scene, kernel_dim, !r);
+            }, [=](int x, int y){
+                rtracer::cpu::debug_cast(scene, x, y);
+            });
+        }
+        delete scene;
     } else {
-        open_window(env, [=]{
-            rtracer::gpu::update_scene(scene, kernel_dim, !r);
-        }, [=](int x, int y){
-            rtracer::gpu::debug_cast(scene, x, y);
-        });
+        renv::gpu::Scene* scene = procedural::gpu::generate(config_path);
+        renv::Environment& env = scene->get_environment();
+        std::cout << "Loaded scene" << std::endl;
+        if (b) {
+            bench(env, [=]{
+                rtracer::gpu::update_scene(scene, kernel_dim, !r);
+            });
+        } else {
+            open_window(env, [=]{
+                rtracer::gpu::update_scene(scene, kernel_dim, !r);
+            }, [=](int x, int y){
+                rtracer::gpu::debug_cast(scene, x, y);
+            });
+        }
+        renv::gpu::Scene::free(*scene);
     }
-    renv::gpu::Scene::free(*scene);
     return 0;
 }
 

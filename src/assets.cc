@@ -4,9 +4,11 @@
 #include <cstdint>
 #include <iostream>
 #include "assets.h"
+#include "rayprimitives/cpu/texture.h"
 
 namespace assets {
-gputils::TextureBuffer4D<float> read_png(const char* filename) {
+
+png_bytep* read_png_raw(const char* filename, int& width, int& height) {
     FILE* fp = fopen(filename, "rb");
 
     png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -15,8 +17,8 @@ gputils::TextureBuffer4D<float> read_png(const char* filename) {
     png_init_io(png, fp);
     png_read_info(png, info);
 
-    int width = png_get_image_width(png, info);
-    int height = png_get_image_height(png, info);
+    width = png_get_image_width(png, info);
+    height = png_get_image_height(png, info);
     png_byte color_type = png_get_color_type(png, info);
     png_byte bit_depth = png_get_bit_depth(png, info);
 
@@ -52,6 +54,13 @@ gputils::TextureBuffer4D<float> read_png(const char* filename) {
     png_read_image(png, img_raw);
     fclose(fp);
     png_destroy_read_struct(&png, &info, NULL);
+    return img_raw;
+}
+
+namespace gpu {
+gputils::TextureBuffer4D<float> read_png(const char* filename) {
+    int width, height;
+    png_bytep* img_raw = read_png_raw(filename, width, height);
 
     // load into texture buffer
     float* flat_norm_img = new float[width * height * 4];
@@ -70,5 +79,32 @@ gputils::TextureBuffer4D<float> read_png(const char* filename) {
     delete[] flat_norm_img;
     return rv;
 }
+
+}
+
+namespace cpu {
+rprimitives::cpu::Texture read_png(const char* filename) {
+    int width, height;
+    png_bytep* img_raw = read_png_raw(filename, width, height);
+    std::vector<rmath::Vec4<float>> rv{};
+
+    for (int row = 0; row < height; row++) {
+        for (int col = 0; col < width; col++) {
+            for (int col = 0; col < width; col++) {
+                png_byte* px = &img_raw[row][col * 4];
+                rmath::Vec4<float> color{};
+                for (int c = 0; c < 4; c++) {
+                    color[c] = (float) px[c] / UINT8_MAX;
+                }
+                rv.push_back(color);
+            }
+        }
+    }
+
+    return rprimitives::cpu::Texture(rv, width, height);
+}
+
+}
+
 }
 

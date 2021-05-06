@@ -1,5 +1,6 @@
 #include "rayopt/gpu/bvh.h"
 #include "rayopt/bounding_box.h"
+#include "rayopt/z_order.h"
 #include "raymath/linear.h"
 #include "rayenv/gpu/scene.h"
 #include <thrust/sort.h>
@@ -16,43 +17,6 @@ void gen_numbers(int* arr, int n) {
     }
 }
 
-__host__ __device__
-unsigned long z_order(rmath::Vec3<float> vec) {
-    auto inv = -vec;
-    unsigned int x = *((unsigned int*) &inv[0]), 
-                  y = *((unsigned int*) &inv[1]), 
-                  z = *((unsigned int*) &inv[2]); // negative to make positive numbers have a larger morton code than negative numbers
-    unsigned int x_offset = 31, y_offset = 31, z_offset = 31;
-    unsigned long t = 0;
-    for (unsigned int i = 0; i < 64; i++) {
-        t <<= 1;
-        switch (i % 3) {
-            case 0: {
-                // handle x
-                assert(x_offset >= 0);
-                t |= (x >> x_offset) & 0b1;
-                x_offset--;
-                break;
-            }
-            case 1: {
-                // handle y
-                assert(y_offset >= 0);
-                t |= (y >> y_offset) & 0b1;
-                y_offset--;
-                break;
-            }
-            case 2: {
-                // handle z
-                assert(z_offset >= 0);
-                t |= (z >> z_offset) & 0b1;
-                z_offset--;
-                break;
-            }
-        }
-    }
-    return t;
-}
-
 __global__
 void gen_morton(unsigned long* codes, BoundingBox* boxes, int n) {
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -62,7 +26,7 @@ void gen_morton(unsigned long* codes, BoundingBox* boxes, int n) {
             codes[i] = ULONG_MAX;
         } else {
             rmath::Vec3<float> center = -boxes[i].center(); // negate since first bit indicates pos/neg
-            codes[i] = z_order(center);
+            codes[i] = ropt::z_order(center);
         }
     }
 }
@@ -123,12 +87,6 @@ BVH::BVH(BoundingBox* org_boxes, int n_org_objs): n_objs(n_org_objs) {
     reorder<<<n_blocks, BVH_THREADS>>>(ordering, org_boxes, flattened_tree, n_objs);
     build_bvh(flattened_tree, n_org_objs);
     this->boxes = flattened_tree;
-    /*{
-        cudaDeviceSynchronize();
-        for (int i = 0; i < 2 * n_org_objs; i++) {
-            std::cout << flattened_tree[i] << std::endl;
-        }
-    }*/
     cudaFree(codes);
 }
 

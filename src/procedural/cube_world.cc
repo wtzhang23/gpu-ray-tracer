@@ -4,6 +4,7 @@
 #include "procedural/cube_world.h"
 #include "procedural/perlin.h"
 #include "rayenv/gpu/scene.h"
+#include "rayenv/cpu/scene.h"
 #include "rayenv/canvas.h"
 #include "raymath/geometry.h"
 #include "raymath/linear.h"
@@ -205,6 +206,22 @@ renv::gpu::Scene* generate(std::string config_path) {
     return scene;
 }
 
+}
+
+namespace cpu {
+renv::cpu::Scene* generate(std::string config_path) {
+    // read doc
+    std::ifstream ifs(config_path.c_str());
+    rapidjson::IStreamWrapper isw(ifs);
+    rapidjson::Document document;
+    document.ParseStream(isw);
+
+    CubeConfig config = generate_config(document);
+    renv::cpu::Scene* scene = config.builder.build_cpu_scene(config.canvas, config.cam);
+    renv::Environment& env = scene->get_environment();
+    finish_env(env, document);
+    return scene;
+}
 }
 
 }
