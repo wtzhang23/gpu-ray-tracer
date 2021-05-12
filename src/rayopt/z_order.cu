@@ -14,21 +14,18 @@ unsigned long z_order(rmath::Vec3<float> vec) {
         switch (i % 3) {
             case 0: {
                 // handle x
-                assert(x_offset >= 0);
                 t |= (x >> x_offset) & 0b1;
                 x_offset--;
                 break;
             }
             case 1: {
                 // handle y
-                assert(y_offset >= 0);
                 t |= (y >> y_offset) & 0b1;
                 y_offset--;
                 break;
             }
             case 2: {
                 // handle z
-                assert(z_offset >= 0);
                 t |= (z >> z_offset) & 0b1;
                 z_offset--;
                 break;

@@ -46,7 +46,6 @@ private:
     const rmath::Ray<float>& r;
     renv::gpu::Scene* scene;
     int node_idx;
-    int n_int;
     
     CUDA_HOSTDEV
     int get_box_idx(int i) const {
@@ -70,29 +69,33 @@ private:
     int parent() const {
         return node_idx / 2;
     }
-    CUDA_HOSTDEV
-    void traverse_up(int max_time);
-    CUDA_HOSTDEV
-    bool traverse_down(int max_time);
 public:
     CUDA_HOSTDEV
-    BVHIterator(const rmath::Ray<float>& r, float max_time, renv::gpu::Scene* scene);
+    BVHIterator(const rmath::Ray<float>& r, renv::gpu::Scene* scene);
+    
     CUDA_HOSTDEV
-    void next(float max_time);
+    bool at_child() const {
+        return node_idx * 2 >= bvh.n_objs * 2 - 1;
+    }
+
+    CUDA_HOSTDEV
+    bool intersects_node() const;
+    
     CUDA_HOSTDEV
     int current() const;
     
     CUDA_HOSTDEV
+    void step_next();
+
+    CUDA_HOSTDEV
+    void step_up();
+
+    CUDA_HOSTDEV
     BoundingBox cur_bounding_box() const;
 
     CUDA_HOSTDEV
-    int n_intersections() const {
-        return n_int;
-    }
-
-    CUDA_HOSTDEV
-    int max_intersections() const {
-        return bvh.n_objs * 2 - 1;
+    bool running() const {
+        return node_idx >= 1;
     }
 };
 

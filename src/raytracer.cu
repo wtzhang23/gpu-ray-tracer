@@ -26,8 +26,10 @@ void trace(renv::gpu::Scene* scene) {
     int stride_x = blockDim.x * gridDim.x;
     int stride_y = blockDim.y * gridDim.y;
 
-    for (int i = x; i < canvas.get_width(); i += stride_x) {
-        for (int j = y; j < canvas.get_height(); j += stride_y) {
+    int width = canvas.get_width();
+    int height = canvas.get_height();
+    for (int i = x; i < width; i += stride_x) {
+        for (int j = y; j < height; j += stride_y) {
             rmath::Ray<float> r = cam.at(i, j);
             float time = INFINITY;
             rprimitives::Isect isect{time};

@@ -94,91 +94,46 @@ void BVH::free(BVH& b) {
     cudaFree(b.boxes);
     cudaFree(b.ordering);
 }
+
 CUDA_HOSTDEV
-void BVHIterator::traverse_up(int max_time) {
-    // go up the tree until first branch
-    assert(node_idx >= 1);
-    while (true) { 
-        while (node_idx % 2 == 1) {
-            node_idx = parent();
-        }
-
-        if (node_idx == 0) {
-            break;
-        }
-
+void BVHIterator::step_up() {
+    while (node_idx % 2 == 1) {
         node_idx = parent();
-        assert(node_idx >= 1);
-        int rc = right_child();
-        assert(rc >= 0);
-        int rc_box_idx = BVHIterator::get_box_idx(rc);
-        float time;
-        n_int++;
-        if (bvh.boxes[rc_box_idx].intersects(r, time) && time < max_time) {
-            node_idx = rc;
-            break;
-        }
     }
-}
-CUDA_HOSTDEV
-bool BVHIterator::traverse_down(int max_time) {
-    assert(node_idx >= 1);
-    while (true) {
-        int lc = left_child();
-        int rc = right_child();
-        int lc_box_idx = get_box_idx(lc);
-        int rc_box_idx = get_box_idx(rc);
-        if (lc < 0) {
-            assert(rc < 0);
-            return true;
-        }
-        float time;
-        if (bvh.boxes[lc_box_idx].intersects(r, time) && time < max_time) {
-            n_int++;
-            node_idx = lc;
-        } else if (bvh.boxes[rc_box_idx].intersects(r, time) && time < max_time) {
-            n_int += 2;
-            node_idx = rc;
-        } else {
-            n_int += 2;
-            return false;
-        }
-    }
-}
-CUDA_HOSTDEV
-BVHIterator::BVHIterator(const rmath::Ray<float>& r, float max_time, renv::gpu::Scene* scene): 
-            bvh(scene->get_bvh()), r(r), node_idx(0), scene(scene), n_int(0) {
-    float time;
-    BoundingBox& top_box = bvh.boxes[get_box_idx(1)];
-    if (top_box.intersects(r, time) && time < max_time) {        
-        node_idx = 1;
-        while (node_idx > 0) {
-            if (traverse_down(max_time)) {
-                break;
-            } else {
-                traverse_up(max_time);
-            }
-        }
-    }
-}
-CUDA_HOSTDEV
-void BVHIterator::next(float max_time) {
+
     if (node_idx == 0) {
         return;
-    }
-    while (true) {
-        traverse_up(max_time);
-        if (node_idx == 0 || traverse_down(max_time)) {
-            break;
-        }
+    } else {
+        node_idx = parent();
+        assert(node_idx >= 1);
+        node_idx = right_child();
+        assert(node_idx >= 1);
     }
 }
+
+CUDA_HOSTDEV
+void BVHIterator::step_next() {
+    int lc = left_child();
+    if (lc < 0) {
+        step_up();
+    } else {
+        node_idx = lc;
+    }
+}
+
+CUDA_HOSTDEV
+BVHIterator::BVHIterator(const rmath::Ray<float>& r, renv::gpu::Scene* scene): 
+            bvh(scene->get_bvh()), r(r), node_idx(1), scene(scene) {}
+
 CUDA_HOSTDEV
 int BVHIterator::current() const {
     if (node_idx == 0) {
         return -1;
     }
     int box_idx = get_box_idx(node_idx);
+    if (box_idx > bvh.n_objs) {
+        return -1;
+    }
     int after_order = bvh.ordering[box_idx];
     return after_order;
 }
@@ -189,6 +144,15 @@ BoundingBox BVHIterator::cur_bounding_box() const {
     }
     int box_idx = get_box_idx(node_idx);
     return bvh.boxes[box_idx];
+}
+
+CUDA_HOSTDEV
+bool BVHIterator::intersects_node() const {
+    if (node_idx == 0) {
+        return false;
+    }
+    float time;
+    return cur_bounding_box().intersects(r, time);
 }
 
 }

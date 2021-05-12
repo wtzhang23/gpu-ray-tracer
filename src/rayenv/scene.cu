@@ -51,17 +51,22 @@ bool cast_ray(Scene* scene, const rmath::Ray<float>& r, rprimitives::Isect& isec
             hit |= cast_local(scene, r, isect, t);
         }
     } else {
-        ropt::gpu::BVHIterator iter{r, INFINITY, scene};
-        while (iter.current() >= 0) {
-            const Transformation& t = trans[iter.current()];
-            if (cast_local(scene, r, isect, t)) {
-                hit = true;
+        ropt::gpu::BVHIterator iter{r, scene};
+        int mask = __activemask();
+        while (iter.running()) {
+            bool intersects_box = iter.intersects_node();
+            if (intersects_box && iter.at_child()) {
+                assert(iter.current() >= 0);
+                const Transformation& t = trans[iter.current()];
+                if (cast_local(scene, r, isect, t)) {
+                    hit = true;
+                }
             }
-            iter.next(INFINITY);
-        }
-        if (env.is_debugging()) {
-            printf("tested %d / %d bounding boxes for %d objs\n", 
-                    iter.n_intersections(), iter.max_intersections(), env.n_trans());
+            if (__ballot_sync(mask, intersects_box)) {
+                iter.step_next();
+            } else {
+                iter.step_up();
+            }
         }
     }
     return hit;

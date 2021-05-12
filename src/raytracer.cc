@@ -16,7 +16,7 @@ ropt::cpu::BVH create_bvh(renv::cpu::Scene* scene) {
     std::vector<ropt::BoundingBox> boxes{};
     for (int i = 0; i < n_trans; i++) {
         renv::Transformation& t = trans[i];
-        assert(t.get_hitable_idx() < n_hitables);
+        assert(t.get_hitable_idx() < hitables.size());
         rprimitives::cpu::Hitable& h = *hitables[t.get_hitable_idx()];
         boxes.push_back(ropt::from_local(h.compute_bounding_box(scene), t));
     }

@@ -92,7 +92,7 @@ renv::gpu::Scene* SceneBuilder::build_gpu_scene(renv::Canvas canvas, renv::Camer
     std::vector<rmath::Quat<float>> flattened_mesh_rot{};
     std::vector<int> counts{};
     for (MeshBuilder& b : this->meshes) {
-        assert(b.triangles.size() == b.shadings.size());
+        assert(b.triangles.size() == b.coords.size());
         assert(b.triangles.size() == b.mats.size());
         counts.push_back(b.triangles.size());
         for (int i = 0; i < b.triangles.size(); i++) {
